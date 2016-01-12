@@ -1,4 +1,4 @@
-# CEmu [![Build Status](https://travis-ci.org/MateoConLechuga/CEmu.svg)](https://travis-ci.org/MateoConLechuga/CEmu)
+# CEmu [![Build Status](https://travis-ci.org/MateoConLechuga/CEmu.svg)](https://travis-ci.org/MateoConLechuga/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu)
 CEmu is an open-source third-party TI-84 Plus CE / TI-83 Premium CE calculator emulator.  
 
 With a core made in C and GUI in C++ with Qt, it works natively on many platforms. It has even been succesfully tested on web-browsers (JavaScript via Emscripten), the TI-Nspire CX (Ndless SDK), and the Apple Watch.
