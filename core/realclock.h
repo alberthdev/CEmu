@@ -1,5 +1,5 @@
-#ifndef _H_RTC
-#define _H_RTC
+#ifndef H_RTC
+#define H_RTC
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +30,7 @@ typedef struct rtc_state {
     uint8_t hold_min;
     uint8_t hold_hour;
     uint8_t hold_day;
+    uint32_t revision;
 } rtc_state_t;
 
 /* Global GPT state */

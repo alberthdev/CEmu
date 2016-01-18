@@ -1,0 +1,26 @@
+<RCC>
+    <qresource prefix="/skin">
+        <file>resources/skin/ti84pce.png</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file>resources/icons/break.png</file>
+        <file>resources/icons/goto.png</file>
+        <file>resources/icons/run.png</file>
+        <file>resources/icons/stepover.png</file>
+        <file>resources/icons/stepout.png</file>
+        <file>resources/icons/stop.png</file>
+        <file>resources/icons/step.png</file>
+        <file>resources/icons/icon.icns</file>
+        <file>resources/icons/icon.ico</file>
+        <file>resources/icons/icon.png</file>
+        <file>resources/icons/mem.png</file>
+    </qresource>
+    <qresource prefix="/qml">
+        <file>qml/Keypad.qml</file>
+        <file>qml/NBigButton.qml</file>
+        <file>qml/NButton.qml</file>
+    </qresource>
+    <qresource prefix="/setup">
+        <file>resources/setup/home.png</file>
+    </qresource>
+</RCC>

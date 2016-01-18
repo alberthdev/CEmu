@@ -16,16 +16,18 @@ static void update() {
     }
 }
 
-void intrpt_trigger(uint32_t int_num, interrupt_mode_t mode) {
-    if (mode) {
+void intrpt_pulse(uint32_t int_num) {
+    intrpt_set(int_num, true);
+    intrpt_set(int_num, false);
+}
+
+void intrpt_set(uint32_t int_num, bool set) {
+    if (set) {
         intrpt.status |= 1 << int_num;
     } else {
         intrpt.status &= ~(1 << int_num);
     }
     update();
-    if (mode == INTERRUPT_PULSE) {
-        intrpt_trigger(int_num, INTERRUPT_CLEAR);
-    }
 }
 
 void intrpt_reset() {
@@ -37,7 +39,7 @@ static uint8_t intrpt_read(uint16_t pio) {
     uint8_t request = pio >> 5 & 1;
     uint8_t bit_offset = (pio & 3) << 3;
 
-    uint8_t value;
+    uint8_t value = 0;
 
     static const uint32_t revision = 0x00010900;
 
@@ -69,7 +71,6 @@ static uint8_t intrpt_read(uint16_t pio) {
             value = (bit_offset & 16) ? 0 : 22;
             break;
         default:
-            value = 0;
             break;
     }
     return value;

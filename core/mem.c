@@ -4,20 +4,15 @@
 #include "emu.h"
 #include "cpu.h"
 #include "flash.h"
-#include "debug/disasmc.h"
 
-// Global MEMORY state
+/* Global MEMORY state */
 mem_state_t mem;
 
-// For Debugging
-disasm_highlights_state_t disasmHighlight;
-
+/* Standard equates */
 static const uint32_t ram_size = 0x65800;
 static const uint32_t flash_size = 0x400000;
 static const uint32_t flash_sector_size_8K = 0x2000;
 static const uint32_t flash_sector_size_64K = 0x10000;
-static const uint32_t flash_sectors_8K = 8;
-static const uint32_t flash_sectors_64K = 63;
 
 void mem_init(void) {
     unsigned int i;
@@ -26,27 +21,22 @@ void mem_init(void) {
     memset(mem.flash.block, 0xFF, flash_size);
     mem.flash.size = flash_size;
 
-    for (i = 0; i < flash_sectors_8K; i++) {
+    for (i = 0; i < 8; i++) {
         mem.flash.sector[i].ptr = mem.flash.block + (i*flash_sector_size_8K);
         mem.flash.sector[i].locked = true;
     }
 
-    for (i = flash_sectors_8K; i < flash_sectors_64K+flash_sectors_8K; i++) {
+    for (i = 8; i < 8+63; i++) {
         mem.flash.sector[i].ptr = mem.flash.block + (i*flash_sector_size_64K);
         mem.flash.sector[i].locked = false;
     }
 
     /* Sector 9 is locked */
-    mem.flash.sector[9].locked = true;
+    mem.flash.sector[8].locked = true;
     mem.flash.locked = true;
 
     mem.ram.block = (uint8_t*)calloc(ram_size, sizeof(uint8_t));      /* Allocate RAM */
 
-    mem.debug.stepOverAddress = -1;
-    mem.debug.block = (uint8_t*)calloc(0x1000000, sizeof(uint8_t));    /* Allocate Debug memory */
-    mem.debug.ports = (uint8_t*)calloc(0x10000, sizeof(uint8_t));      /* Allocate Debug Port Monitor */
-
-    mem.flash.mapped = false;
     mem.flash.write_index = 0;
     mem.flash.command = NO_COMMAND;
     gui_console_printf("Initialized memory...\n");
@@ -55,19 +45,9 @@ void mem_init(void) {
 void mem_free(void) {
     if (mem.ram.block) {
         free(mem.ram.block);
-        mem.ram.block = NULL;
     }
     if (mem.flash.block) {
         free(mem.flash.block);
-        mem.flash.block = NULL;
-    }
-    if (mem.debug.block) {
-        free(mem.debug.block);
-        mem.debug.block = NULL;
-    }
-    if (mem.debug.ports) {
-        free(mem.debug.ports);
-        mem.debug.ports = NULL;
     }
     gui_console_printf("Freed memory...\n");
 }
@@ -77,12 +57,31 @@ void mem_reset(void) {
     gui_console_printf("RAM reset.\n");
 }
 
-uint8_t* phys_mem_ptr(uint32_t addr, uint32_t size) {
+static uint32_t flash_address(uint32_t address, uint32_t *size) {
+    uint32_t mask = ((0x10000 << (flash.map & 7)) - 1) & 0x3FFFFF;
+    if (flash.map & 8) {
+        mask = 0xFFFF;
+    }
+    if (size) {
+        *size = mask + 1;
+    }
+    if (address > mask || !flash.mapped)  {
+        address &= mask;
+        if (!size) {
+            cpu.cycles += 258;
+        }
+    } else if (!size) {
+        cpu.cycles += 6 + flash.added_wait_states;
+    }
+    return address;
+}
+
+uint8_t *phys_mem_ptr(uint32_t addr, uint32_t size) {
     uint8_t **block;
     uint32_t block_size, end_addr;
     if (addr < 0xD00000) {
+        addr = flash_address(addr, &block_size);
         block = &mem.flash.block;
-        block_size = flash_size;
     } else {
         addr -= 0xD00000;
         block = &mem.ram.block;
@@ -101,12 +100,12 @@ static void flash_reset_write_index(uint32_t addr, uint8_t byte) {
     mem.flash.write_index = 0;
 }
 
-static void flash_write(uint32_t addr, uint8_t byte) {
-    mem.flash.block[addr] &= byte;
+static void flash_write(uint32_t address, uint8_t byte) {
+    mem.flash.block[address] &= byte;
 }
 
-static void flash_erase(uint32_t addr, uint8_t byte) {
-    (void)addr;
+static void flash_erase(uint32_t address, uint8_t byte) {
+    (void)address;
     (void)byte;
 
     mem.flash.command = FLASH_CHIP_ERASE;
@@ -115,7 +114,7 @@ static void flash_erase(uint32_t addr, uint8_t byte) {
     gui_console_printf("Erased entire Flash chip.\n");
 }
 
-static void flash_erase_sector(uint32_t addr, uint8_t byte) {
+static void flash_erase_sector(uint32_t address, uint8_t byte) {
     uint8_t sector;
 
     (void)byte;
@@ -123,23 +122,23 @@ static void flash_erase_sector(uint32_t addr, uint8_t byte) {
     mem.flash.command = FLASH_SECTOR_ERASE;
 
     /* Reset sector */
-    sector = addr / flash_sector_size_64K;
+    sector = address/flash_sector_size_64K;
     if(mem.flash.sector[sector].locked == false) {
         memset(mem.flash.sector[sector].ptr, 0xFF, flash_sector_size_64K);
     }
 }
 
-static void flash_verify_sector_protection(uint32_t addr, uint8_t byte) {
+static void flash_verify_sector_protection(uint32_t address, uint8_t byte) {
+    (void)address;
     (void)byte;
-    (void)addr;
 
     mem.flash.command = FLASH_READ_SECTOR_PROTECTION;
 }
 
-typedef struct flash_write_pattern {
-    int length;
+typedef const struct flash_write_pattern {
+    const int length;
     const flash_write_t pattern[6];
-    void (*handler)(uint32_t address, uint8_t value);
+    void (*const handler)(uint32_t address, uint8_t value);
 } flash_write_pattern_t;
 
 typedef struct flash_status_pattern {
@@ -201,29 +200,36 @@ static flash_write_pattern_t patterns[] = {
 
 static uint8_t flash_read_handler(uint32_t address) {
     uint8_t value = 0;
-    uint8_t sector = 0;
+    uint8_t sector;
 
-    switch(mem.flash.command) {
-        case NO_COMMAND:
-            value = mem.flash.block[address];
-            break;
-        case FLASH_SECTOR_ERASE:
-            value = 0x80;
-            mem.flash.read_index++;
-            if(mem.flash.read_index == 3) {
-                mem.flash.read_index = 0;
+    address = flash_address(address, NULL);
+    if (address < 0x10000) {
+        sector = address/flash_sector_size_8K;
+    } else {
+        sector = (address/flash_sector_size_64K)+7;
+    }
+
+    if (flash.mapped) {
+        switch(mem.flash.command) {
+            case NO_COMMAND:
+                value = mem.flash.block[address];
+                break;
+            case FLASH_SECTOR_ERASE:
+                value = 0x80;
+                mem.flash.read_index++;
+                if(mem.flash.read_index == 3) {
+                    mem.flash.read_index = 0;
+                    mem.flash.command = NO_COMMAND;
+                }
+                break;
+            case FLASH_CHIP_ERASE:
+                value = 0x80;
                 mem.flash.command = NO_COMMAND;
-            }
-            break;
-        case FLASH_CHIP_ERASE:
-            value = 0x80;
-            mem.flash.command = NO_COMMAND;
-            break;
-        case FLASH_READ_SECTOR_PROTECTION:
-            sector = (address / ((address < 0x10000) ? flash_sector_size_8K : flash_sector_size_64K)) + ((address < 0x10000) ? 0 : flash_sectors_8K);
-            gui_console_printf("%d\n",sector);
-            value = (uint8_t)mem.flash.sector[sector].locked;
-            break;
+                break;
+            case FLASH_READ_SECTOR_PROTECTION:
+                value = (uint8_t)mem.flash.sector[sector].locked;
+                break;
+        }
     }
 
     /* Returning 0x00 is enough to emulate for the OS. Set the msb bit for user routines? */
@@ -234,7 +240,12 @@ static void flash_write_handler(uint32_t address, uint8_t byte) {
     int i;
     int partial_match = 0;
     flash_write_t *w;
-    struct flash_write_pattern *pattern;
+    flash_write_pattern_t *pattern;
+
+    address = flash_address(address, NULL);
+    if (!flash.mapped) {
+        return;
+    }
 
     /* See if we can reset to default */
     if (mem.flash.command != NO_COMMAND) {
@@ -267,186 +278,77 @@ static void flash_write_handler(uint32_t address, uint8_t byte) {
     }
 }
 
-/* returns wait cycles */
-uint8_t memory_read_byte(const uint32_t address)
-{
+uint8_t mem_read_byte(uint32_t address) {
     uint8_t value = 0;
-    uint32_t addr = address & 0xFFFFFF;
-
-    switch((addr >> 20) & 0xF) {
-        // FLASH
+    address &= 0xFFFFFF;
+    switch((address >> 20) & 0xF) {
+        /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
-            cpu.cycles += 5 + flash.added_wait_states;
+        case 0x4: case 0x5: case 0x6: case 0x7:
             value = flash_read_handler(address);
             break;
 
-        // MAYBE FLASH
-        case 0x4: case 0x5: case 0x6: case 0x7:
-            addr -= 0x400000;
-            if (mem.flash.mapped == true) {
-                cpu.cycles += 5 + flash.added_wait_states;
-                value = flash_read_handler(address);
-            }
-            break;
-
-        // UNMAPPED
+        /* UNMAPPED */
         case 0x8: case 0x9: case 0xA: case 0xB: case 0xC:
-            cpu.cycles += 257;
+            cpu.cycles += 258;
             break;
 
-        // RAM
+        /* RAM */
         case 0xD:
-            addr -= 0xD00000;
-            if (addr < 0x65800) {
-                cpu.cycles += 3;
-                value = mem.ram.block[addr];
-                break;
+            cpu.cycles += 4;
+            address &= 0x7FFFF;
+            if (address < 0x65800) {
+                value = mem.ram.block[address];
             }
-        // UNMAPPED
-            addr -= 0x65800;
-            if (addr < 0x1A800) {
-                cpu.cycles += 3;
-                break;
-            }
-        // MIRRORED
-            value = memory_read_byte(address - 0x80000);
-            return value;
+            break;
 
+        /* MMIO <-> Advanced Perphrial Bus */
         case 0xE: case 0xF:
             cpu.cycles += 2;
-            value = port_read_byte(mmio_range(addr)<<12 | addr_range(addr));          // read byte from mmio
-            break;
-
-        default:
-            cpu.cycles += 1;
+            value = port_read_byte(mmio_range(address)<<12 | addr_range(address));
             break;
     }
 
-    if (mem.debug.block[address]) {
-        disasmHighlight.hit_read_breakpoint = mem.debug.block[address] & DBG_READ_BREAKPOINT;
-        disasmHighlight.hit_write_breakpoint = mem.debug.block[address] & DBG_WRITE_BREAKPOINT;
-        disasmHighlight.hit_exec_breakpoint = mem.debug.block[address] & DBG_EXEC_BREAKPOINT;
-        if (!in_debugger && disasmHighlight.hit_read_breakpoint) {
-            debugger(HIT_READ_BREAKPOINT, address);
-        }
-    }
-
-    if (cpu.registers.PC == address) {
-        disasmHighlight.hit_pc = true;
+    if (!in_debugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
+        openDebugger(HIT_READ_BREAKPOINT, address);
     }
 
     return value;
 }
 
-void memory_write_byte(const uint32_t address, const uint8_t byte) {
-    uint32_t addr = address & 0xFFFFFF;
-
-    switch((addr >> 20) & 0xF) {
-        // FLASH
+void mem_write_byte(uint32_t address, uint8_t byte) {
+    address &= 0xFFFFFF;
+    switch((address >> 20) & 0xF) {
+        /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
-            if (mem.flash.locked == false) {
-                flash_write_handler(addr, byte);
-            }
-            cpu.cycles += 5;
-            break;
-
-        // MAYBE FLASH
         case 0x4: case 0x5: case 0x6: case 0x7:
-            addr -= 0x400000;
-            if (mem.flash.locked == false) {
-                if (mem.flash.mapped == true) {
-                    cpu.cycles += 5;
-                    flash_write_handler(addr, byte);
-                    break;
-                }
+            if (!mem.flash.locked) {
+                flash_write_handler(address, byte);
             }
-            cpu.cycles += 257;
             break;
 
-        // UNMAPPED
+        /* UNMAPPED */
         case 0x8: case 0x9: case 0xA: case 0xB: case 0xC:
-            cpu.cycles += 5;
+            cpu.cycles += 258;
             break;
 
-        // RAM
+        /* RAM */
         case 0xD:
-            addr -= 0xD00000;
-            if (addr < 0x65800) {
-                cpu.cycles += 2;
-                mem.ram.block[addr] = byte;
-                break;
+            cpu.cycles += 2;
+            address &= 0x7FFFF;
+            if (address < 0x65800) {
+                mem.ram.block[address] = byte;
             }
-            // UNMAPPED
-            addr -=  0x65800;
-            if (addr < 0x1A800) {
-                cpu.cycles += 1;
-                break;
-            }
-            // MIRRORED
-            memory_write_byte(addr - 0x80000, byte);
-            return;
+            break;
 
-        // MMIO <-> Advanced Perphrial Bus
+        /* MMIO <-> Advanced Perphrial Bus */
         case 0xE: case 0xF:
             cpu.cycles += 2;
-            port_write_byte(mmio_range(addr)<<12 | addr_range(addr), byte);         // write byte to the mmio port
-            break;
-
-        default:
-            cpu.cycles += 1;
+            port_write_byte(mmio_range(address)<<12 | addr_range(address), byte);
             break;
     }
 
-    if (!in_debugger && mem.debug.block[address&0xFFFFFF] & DBG_WRITE_BREAKPOINT) {
-        debugger(HIT_WRITE_BREAKPOINT, address);
+    if (!in_debugger && debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
+        openDebugger(HIT_WRITE_BREAKPOINT, address);
     }
-
-    return;
-}
-
-void memory_force_write_byte(const uint32_t address, const uint8_t byte) {
-    uint32_t addr = address & 0xFFFFFF;
-
-    switch((addr >> 20) & 0xF) {
-        // FLASH
-        case 0x0: case 0x1: case 0x2: case 0x3:
-            mem.flash.block[addr] = byte;
-            break;
-
-        // MAYBE FLASH
-        case 0x4: case 0x5: case 0x6: case 0x7:
-            addr -= 0x400000;
-            mem.flash.block[addr] = byte;
-            break;
-
-        // UNMAPPED
-        //case 0x8: case 0x9: case 0xA: case 0xB: case 0xC:
-        //    break;
-
-        // RAM
-        case 0xD:
-            addr -= 0xD00000;
-            if (addr < 0x65800) {
-                mem.ram.block[addr] = byte;
-                break;
-            }
-            // UNMAPPED
-            addr -=  0x65800;
-            if (addr < 0x1A800) {
-                break;
-            }
-            // MIRRORED
-            memory_force_write_byte(addr - 0x80000, byte);
-            return;
-
-        // MMIO <-> Advanced Perphrial Bus
-        case 0xE: case 0xF:
-            port_force_write_byte(mmio_range(addr)<<12 | addr_range(addr), byte);         // write byte to the mmio port
-            break;
-
-        default:
-            break;
-    }
-
-    return;
 }

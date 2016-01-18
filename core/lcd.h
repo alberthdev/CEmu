@@ -22,12 +22,12 @@ typedef struct lcd_cntrl_state {
     uint32_t lpcurr;        /* Lower panel current frame address register */
 
     /* 256x16-bit color palette registers */
-    /* 256 palette entries organized as 128 locations of two entries per word (+1 for sanitation) */
+    /* 256 palette entries organized as 128 locations of two entries per word (+1 for sanitization) */
     uint16_t palette[0x101];
 
 
     /* Cursor image RAM registers (TODO) */
-    /* 256-word wide values defining images overlaid by the hw cursor mechanism */
+    /* 256-word wide values defining images overlaid by the hw cursor mechanism (+1 for sanitization) */
     int cursorimage[0x101];
     uint32_t crsrCtrl;           /* Cursor control register */
     uint32_t crsrConfig;         /* Cursor configuration register */
@@ -39,6 +39,9 @@ typedef struct lcd_cntrl_state {
     uint32_t crsricr;            /* Cursor interrupt clear register */
     uint32_t crsrris;            /* Cursor raw interrupt status register - const */
     uint32_t crsrmis;            /* Cursor masked interrupt status register - const */
+
+    /* Internal Use */
+    uint16_t framebuffer[320*240];
 } lcd_cntrl_state_t;
 
 /* Global LCD state */

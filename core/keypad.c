@@ -8,17 +8,15 @@
 keypad_state_t keypad;
 
 void keypad_intrpt_check() {
-    uint8_t status = (keypad.status & keypad.enable) | (keypad.gpio_status & keypad.gpio_enable);
-
-    intrpt_trigger(INT_KEYPAD, status ? INTERRUPT_SET : INTERRUPT_CLEAR);
+    intrpt_set(INT_KEYPAD, (keypad.status & keypad.enable) | (keypad.gpio_status & keypad.gpio_enable));
 }
 
-void keypad_key_event(int row, int col, bool press) {
+void keypad_key_event(unsigned int row, unsigned int col, bool press) {
     if (row == 2 && col == 0) {
-        intrpt_trigger(INT_ON, press ? INTERRUPT_SET : INTERRUPT_CLEAR);
+        intrpt_set(INT_ON, press);
         if (press && control.ports[0] & 0x40) {
             control.ports[2] = ~1;
-            intrpt_trigger(19, INTERRUPT_PULSE);
+            intrpt_pulse(19);
         }
     } else {
         if (press) {
@@ -41,29 +39,37 @@ static uint8_t keypad_read(const uint16_t pio)
     uint8_t upper_index = (pio >> 4) & 0xF;
     uint8_t lower_index = pio & 0xF;
 
+    uint8_t value = 0;
+
     if (upper_index == 0x1 || upper_index == 0x2) {
         return read8(keypad.data[lower_index>>1],(lower_index&1)<<3);
     }
 
     switch(index) {
         case 0x00:
-            return read8(keypad.control, bit_offset);
+            value = read8(keypad.control, bit_offset);
+            break;
         case 0x01:
-            return read8(keypad.size, bit_offset);
+            value = read8(keypad.size, bit_offset);
+            break;
         case 0x02:
-            return read8(keypad.status & keypad.enable, bit_offset);
+            value = read8(keypad.status & keypad.enable, bit_offset);
+            break;
         case 0x03:
-            return read8(keypad.enable, bit_offset);
+            value = read8(keypad.enable, bit_offset);
+            break;
         case 0x10:
-            return read8(keypad.gpio_enable, bit_offset);
+            value = read8(keypad.gpio_enable, bit_offset);
+            break;
         case 0x11:
-            return read8(keypad.gpio_status, bit_offset);
+            value = read8(keypad.gpio_status, bit_offset);
+            break;
         default:
             break;
     }
 
     /* return 0x00 if unimplemented or not in range */
-    return 0;
+    return value;
 }
 
 /* Scan next row of keypad, if scanning is enabled */
@@ -122,10 +128,10 @@ static void keypad_write(const uint16_t pio, const uint8_t byte)
                     }
                 }
             }
-            return;
+            break;
         case 0x01:
             write8(keypad.size, bit_offset, byte);
-            return;
+            break;
         case 0x02:
             write8(keypad.status, bit_offset, keypad.status & ~byte);
             if (keypad.mode == 1) {
@@ -137,21 +143,21 @@ static void keypad_write(const uint16_t pio, const uint8_t byte)
                 }
             }
             keypad_intrpt_check();
-            return;
+            break;
         case 0x03:
             write8(keypad.enable, bit_offset, byte & 7);
             keypad_intrpt_check();
-            return;
+            break;
         case 0x10:
             write8(keypad.gpio_enable, bit_offset, byte);
             keypad_intrpt_check();
-            return;
+            break;
         case 0x11:
             write8(keypad.gpio_status, bit_offset, keypad.gpio_status & ~byte);
             keypad_intrpt_check();
-            return;
+            break;
         default:
-            return;  /* Escape write sequence if unimplemented */
+            break;  /* Escape write sequence if unimplemented */
     }
 }
 

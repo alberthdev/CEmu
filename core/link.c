@@ -13,20 +13,20 @@ static const int ram_start = 0xD00000;
 static const int safe_ram_loc = 0xD052C6;
 
 static const uint8_t jforcegraph[8] = {
-    0xFD, 0xCB, 0x03, 0x86,   // res graphdraw,(iy+graphflags)
-    0xC3, 0x7C, 0x14, 0x02    // jp _jforcegraphnokey
+    0xFD, 0xCB, 0x03, 0x86,   /* res graphdraw,(iy+graphflags) */
+    0xC3, 0x7C, 0x14, 0x02    /* jp _jforcegraphnokey          */
 };
 
 static const uint8_t jforcehome[6] = {
-    0x3E, 0x09,                // ld a,kclear
-    0xC3, 0x64, 0x01, 0x02     // jp _jforcecmd
+    0x3E, 0x09,                /* ld a,kclear   */
+    0xC3, 0x64, 0x01, 0x02     /* jp _jforcecmd */
 };
 
 static const uint8_t archivevar[14] = {
-    0xCD, 0xC8, 0x02, 0x02,     // call _op4toop1
-    0xCD, 0x0C, 0x05, 0x02,     // call _chkfindsym
-    0xCD, 0x4C, 0x14, 0x02,     // call _archivevar
-    0x18, 0xFE                  // _sink: jr _sink
+    0xCD, 0xC8, 0x02, 0x02,     /* call _op4toop1   */
+    0xCD, 0x0C, 0x05, 0x02,     /* call _chkfindsym */
+    0xCD, 0x4C, 0x14, 0x02,     /* call _archivevar */
+    0x18, 0xFE                  /* _sink: jr _sink  */
 };
 
 static const uint8_t header_data[10] = {
@@ -34,23 +34,23 @@ static const uint8_t header_data[10] = {
 };
 
 static const uint8_t pgrm_loader[39] = {
-  0xF5,                         // push af
-  0xE5,                         // push hl
-  0xCD, 0x28, 0x06, 0x02,       // call _pushop1
-  0xCD, 0x0C, 0x05, 0x02,       // call _chkfindsym
-  0xD4, 0x34, 0x14, 0x02,       // call nc,_delvararc
-  0xCD, 0xC4, 0x05, 0x02,       // call _popop1
-  0xE1,                         // pop hl
-  0xF1,                         // pop af
-  0xCD, 0x38, 0x13, 0x02,       // call _createvar
-  0xED, 0x53, 0xC6, 0x52, 0xD0, // ld (safe_ram_loc),de
-  0x18, 0xFE                    // _sink: jr _sink
+  0xF5,                         /* push af              */
+  0xE5,                         /* push hl              */
+  0xCD, 0x28, 0x06, 0x02,       /* call _pushop1        */
+  0xCD, 0x0C, 0x05, 0x02,       /* call _chkfindsym     */
+  0xD4, 0x34, 0x14, 0x02,       /* call nc,_delvararc   */
+  0xCD, 0xC4, 0x05, 0x02,       /* call _popop1         */
+  0xE1,                         /* pop hl               */
+  0xF1,                         /* pop af               */
+  0xCD, 0x38, 0x13, 0x02,       /* call _createvar      */
+  0xED, 0x53, 0xC6, 0x52, 0xD0, /* ld (safe_ram_loc),de */
+  0x18, 0xFE                    /* _sink: jr _sink      */
 };
 
 void enterVariableLink(void) {
     /* Wait for the GUI to finish whatever it needs to do */
     do {
-        emu_sleep();
+        gui_emu_sleep();
     } while(emu_is_sending || emu_is_recieving);
 }
 
@@ -73,6 +73,9 @@ bool sendVariableLink(const char *var_name) {
     FILE *file;
     uint8_t tmp_buf[0x80];
 
+    uint32_t save_cycles,
+             save_next;
+
     uint8_t var_size_low,
             var_size_high,
             var_type,
@@ -94,8 +97,10 @@ bool sendVariableLink(const char *var_name) {
     }
 
     file = fopen_utf8(var_name,"rb");
+    if (!file) {
+        return false;
+    }
 
-    if (!file) return false;
     if (fread(tmp_buf, 1, h_size, file) != h_size)        goto r_err;
     if (memcmp(tmp_buf, header_data, h_size))             goto r_err;
 
@@ -109,10 +114,14 @@ bool sendVariableLink(const char *var_name) {
     if (fseek(file, 0x45, 0))                             goto r_err;
     if (fread(&var_arc, 1, 1, file) != 1)                 goto r_err;
 
+    save_cycles = cpu.cycles;
+    save_next = cpu.next;
+
     cpu.halted = cpu.IEF_wait = 0;
     memcpy(run_asm_safe, jforcegraph, sizeof(jforcegraph));
     cpu_flush(safe_ram_loc, 1);
-    cycle_count_delta = -5000000;
+    cpu.cycles = 0;
+    cpu.next = 5000000;
     cpu_execute();
 
     if (fseek(file, 0x3B, 0))                            goto r_err;
@@ -126,12 +135,11 @@ bool sendVariableLink(const char *var_name) {
     run_asm_safe[5] = var_type;
     memcpy(&run_asm_safe[6], pgrm_loader, sizeof(pgrm_loader));
     cpu_flush(safe_ram_loc, 1);
-    cycle_count_delta = -10000000;
+    cpu.cycles = 0;
+    cpu.next = 10000000;
     cpu_execute();
 
-    var_ptr = phys_mem_ptr((run_asm_safe[0])      |
-                           (run_asm_safe[1] << 8) |
-                           (run_asm_safe[2] << 16), 1);
+    var_ptr = phys_mem_ptr(debug_read_long(safe_ram_loc), 1);
 
     var_size = (var_size_high << 8) | var_size_low;
 
@@ -142,15 +150,20 @@ bool sendVariableLink(const char *var_name) {
         cpu.halted = cpu.IEF_wait = 0;
         memcpy(run_asm_safe, archivevar, sizeof(archivevar));
         cpu_flush(safe_ram_loc, 1);
-        cycle_count_delta = -1000000;
+        cpu.cycles = 0;
+        cpu.next = 1000000;
         cpu_execute();
     }
 
     cpu.halted = cpu.IEF_wait = 0;
     memcpy(run_asm_safe, jforcehome, sizeof(jforcehome));
     cpu_flush(safe_ram_loc, 1);
-    cycle_count_delta = -5000000;
+    cpu.cycles = 0;
+    cpu.next = 5000000;
     cpu_execute();
+
+    cpu.cycles = save_cycles;
+    cpu.next = save_next;
 
     return !fclose(file);
 
@@ -169,9 +182,12 @@ bool receiveVariableLink(int count, const calc_var_t *vars, const char *file_nam
     calc_var_t var;
     uint16_t header_size = 13, size = 0, checksum = 0;
     int byte;
+
     file = fopen_utf8(file_name, "w+b");
+    if (!file) {
+        return false;
+    }
     setbuf(file, NULL);
-    if (!file) return false;
     if (fwrite(header, sizeof header - 1, 1, file) != 1) goto w_err;
     if (fseek(file, 0x37, SEEK_SET))                     goto w_err;
     while (count--) {
@@ -193,9 +209,10 @@ bool receiveVariableLink(int count, const calc_var_t *vars, const char *file_nam
         checksum += byte;
     }
     if (fwrite(&checksum,              2, 1, file) != 1) goto w_err;
+
     return !fclose(file);
 
-  w_err:
+w_err:
     fclose(file);
     remove(file_name);
     return false;

@@ -9,31 +9,33 @@ flash_state_t flash;
 
 /* Read from the 0x1000 range of ports */
 static uint8_t flash_read(const uint16_t pio) {
-    uint8_t addr = pio & 0xFF;
-    uint8_t read_byte;
+    uint8_t index = pio & 0xFF;
+    uint8_t value;
 
-    switch (addr) {
+    switch (index) {
+        case 0x00:
+            value = flash.mapped;
+            break;
         case 0x02:
-            read_byte = flash.map;
+            value = flash.map;
             break;
         case 0x05:
-            read_byte = flash.added_wait_states;
+            value = flash.added_wait_states;
             break;
         default:
-            read_byte = flash.ports[addr];
+            value = flash.ports[index];
             break;
     }
-    return read_byte;
+    return value;
 }
 
 /* Write to the 0x1000 range of ports */
-static void flash_write(const uint16_t pio, const uint8_t byte)
-{
-    uint8_t addr = pio & 0xFF;
+static void flash_write(const uint16_t pio, const uint8_t byte) {
+    uint8_t index = pio & 0xFF;
 
-    switch (addr) {
+    switch (index) {
         case 0x00:
-            flash.ports[addr] = byte & 1;
+            flash.mapped = byte;
             break;
         case 0x02:
             flash.map = byte;
@@ -42,7 +44,7 @@ static void flash_write(const uint16_t pio, const uint8_t byte)
             flash.added_wait_states = byte;
             break;
         default:
-            flash.ports[addr] = byte;
+            flash.ports[index] = byte;
             break;
     }
 }
@@ -52,17 +54,13 @@ static const eZ80portrange_t device = {
     .write_out  = flash_write
 };
 
-
 eZ80portrange_t init_flash(void) {
-    int i;
+    memset(flash.ports, 0, sizeof flash.ports);
 
-    /* Initialize device to default state */
-    for(i = 0; i<0x100; i++) {
-        flash.ports[i] = 0;
-    }
     flash.ports[0x00] = 0x01; /* From WikiTI */
     flash.ports[0x07] = 0xFF; /* From WikiTI */
-    flash.map = 0x06;         /* From WikiTI */
+    flash.mapped = 1;
+    flash.map = 6;
 
     gui_console_printf("Initialized flash device...\n");
     return device;
