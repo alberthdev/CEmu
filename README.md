@@ -46,7 +46,9 @@ After downloading the source (you can clone the repo or just get the zip):
   * Open the .pro file with Qt Creator, set it up (default project settings should be fine), and hit Build
   * In a shell, cd to the project folder and type `qmake -r CEmu.pro; make`
 
-You're welcome to [report any bugs](https://github.com/MateoConLechuga/CEmu/issues) you may encounter, and if you want to help, tell us, or send patches / pull requests!
+_Note: Debugging support is somewhat core-related but is only built conditionally (since embedded targets probably won't need it). To enable it, define `DEBUG_SUPPORT`. The Qt GUI does this in the .pro file._
+
+You're welcome to [report any bugs](https://github.com/MateoConLechuga/CEmu/issues) you may encounter, and if you want to help, tell us, or send patches / pull requests! If you'd like to contribute code, please consider using [Artistic Style](http://astyle.sourceforge.net/) with the settings specified in the `.astylerc` file to format your code. Qt Creator can [format code with Artistic Style](http://doc.qt.io/qtcreator/creator-beautifier.html) with minimal setup.
 
 
 ## TODO list
@@ -63,7 +65,6 @@ You're welcome to [report any bugs](https://github.com/MateoConLechuga/CEmu/issu
 
 ### GUI
 * HD Icon
-* Fix single GIF frame output (wrong palette used by the giflib!?)
 * Implement 83PCE/84+CE differences (2 keypad setups, "skins", etc.)
 * More translations (for now, it's available in English and French).
 * ...

@@ -280,7 +280,10 @@ static void flash_write_handler(uint32_t address, uint8_t byte) {
 
 uint8_t mem_read_byte(uint32_t address) {
     uint8_t value = 0;
+    uint32_t ramAddress;
+
     address &= 0xFFFFFF;
+
     switch((address >> 20) & 0xF) {
         /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
@@ -296,9 +299,9 @@ uint8_t mem_read_byte(uint32_t address) {
         /* RAM */
         case 0xD:
             cpu.cycles += 4;
-            address &= 0x7FFFF;
-            if (address < 0x65800) {
-                value = mem.ram.block[address];
+            ramAddress = address & 0x7FFFF;
+            if (ramAddress < 0x65800) {
+                value = mem.ram.block[ramAddress];
             }
             break;
 
@@ -308,7 +311,7 @@ uint8_t mem_read_byte(uint32_t address) {
             value = port_read_byte(mmio_range(address)<<12 | addr_range(address));
             break;
     }
-#ifndef EMBEDED_DEVICE
+#ifdef DEBUG_SUPPORT
     if (!in_debugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
         openDebugger(HIT_READ_BREAKPOINT, address);
     }
@@ -317,7 +320,9 @@ uint8_t mem_read_byte(uint32_t address) {
 }
 
 void mem_write_byte(uint32_t address, uint8_t byte) {
+    uint32_t ramAddress;
     address &= 0xFFFFFF;
+
     switch((address >> 20) & 0xF) {
         /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
@@ -335,9 +340,9 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
         /* RAM */
         case 0xD:
             cpu.cycles += 2;
-            address &= 0x7FFFF;
-            if (address < 0x65800) {
-                mem.ram.block[address] = byte;
+            ramAddress = address & 0x7FFFF;
+            if (ramAddress < 0x65800) {
+                mem.ram.block[ramAddress] = byte;
             }
             break;
 
@@ -347,7 +352,7 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
             port_write_byte(mmio_range(address)<<12 | addr_range(address), byte);
             break;
     }
-#ifndef EMBEDED_DEVICE
+#ifdef DEBUG_SUPPORT
     if (!in_debugger && debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
         openDebugger(HIT_WRITE_BREAKPOINT, address);
     }

@@ -24,6 +24,8 @@
 /* Global LCD state */
 lcd_cntrl_state_t lcd;
 
+void (*lcd_event_gui_callback)(void) = NULL;
+
 #define dataswap(a, b) do { (a) ^= (b); (b) ^= (a); (a) ^= (b); } while(0)
 
 /* Draw the current screen into a 16bpp upside-down bitmap. */
@@ -153,9 +155,10 @@ static void lcd_event(int index) {
     lcd.upcurr = lcd.upbase;
     lcd.ris |= 0xC;
     intrpt_set(INT_LCD, lcd.ris & lcd.mis);
-#ifndef EMBEDED_DEVICE
-    gif_new_frame();
-#endif
+
+    if (lcd_event_gui_callback) {
+        lcd_event_gui_callback();
+    }
 }
 
 void lcd_reset(void) {
