@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<TS version="2.1" language="es_ES">
 <context>
     <name>AboutWindow</name>
     <message>
@@ -18,7 +18,7 @@
     <message>
         <location filename="../mainwindow.ui" line="264"/>
         <source>Keypad</source>
-        <translation>Clavier</translation>
+        <translation>Teclado</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="295"/>
@@ -37,22 +37,22 @@
     <message>
         <location filename="../mainwindow.ui" line="504"/>
         <source>Size</source>
-        <translation>Taille</translation>
+        <translation>El Tamaño</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="547"/>
         <source>Capture</source>
-        <translation>Capture</translation>
+        <translation>Foto</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="561"/>
         <source>Screenshot</source>
-        <translation>Copie d&apos;écran</translation>
+        <translation>Copia de LCD</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="727"/>
         <source>Record GIF</source>
-        <translation>Enregistrement GIF</translation>
+        <translation>Grabar un GIF</translation>
     </message>
     <message>
         <source>Take Sceenshot</source>
@@ -94,12 +94,12 @@
     <message>
         <location filename="../mainwindow.ui" line="766"/>
         <source>Settings</source>
-        <translation>Paramètres</translation>
+        <translation>Ajustes</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="772"/>
         <source>General</source>
-        <translation>Général</translation>
+        <translation>General</translation>
     </message>
     <message>
         <source>Automatically save and restore state</source>
@@ -108,7 +108,7 @@
     <message>
         <location filename="../mainwindow.ui" line="778"/>
         <source>Always show CEmu on top of other windows</source>
-        <translation>Toumonrs afficher CEmu par dessus d&apos;autres fenêtres</translation>
+        <translation>CEmu siempre esta superior de otras programas</translation>
     </message>
     <message>
         <source>Show status bar</source>
@@ -133,7 +133,7 @@
     <message>
         <location filename="../mainwindow.ui" line="824"/>
         <source>ROM Image</source>
-        <translation>Image ROM</translation>
+        <translation>Imagen de ROM</translation>
     </message>
     <message>
         <source>ROM Location:</source>
@@ -154,7 +154,7 @@
     <message>
         <location filename="../mainwindow.ui" line="1232"/>
         <source>Debug</source>
-        <translation>Debug</translation>
+        <translation>Depurar</translation>
     </message>
     <message>
         <source>Run</source>
@@ -176,123 +176,123 @@
         <location filename="../mainwindow.ui" line="5078"/>
         <location filename="../mainwindow.ui" line="5134"/>
         <source>Goto</source>
-        <translation>Aller à...</translation>
+        <translation>Ir a...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1402"/>
         <source>Disassembly</source>
-        <translation>Désassemblage</translation>
+        <translation>Desmontaje</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1434"/>
         <source>Port Monitor</source>
-        <translation>Moniteur de ports</translation>
+        <translation>Monitor de puerto</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1826"/>
         <source>LCD Base Address</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1870"/>
         <source>LCD Current Address</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1914"/>
         <source>BPP mode</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1921"/>
         <source>&gt;99</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1931"/>
         <source>LCD State</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2021"/>
         <source>PWR</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2090"/>
         <source>BEPO</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2134"/>
         <source>BGR</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2178"/>
         <source>BEBO</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="4488"/>
         <source>Sleep</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5002"/>
         <source>Memory</source>
-        <translation>Mémoire</translation>
+        <translation>Memoria</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1721"/>
         <source>Address</source>
-        <translation>Adresse</translation>
+        <translation>Alocución</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="357"/>
         <source>Send files:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="450"/>
         <source>Receive files:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="573"/>
         <source>GIF</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="592"/>
         <source>PNG</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="608"/>
         <source>Recording</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="734"/>
         <source>Framerate:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="785"/>
         <source>Automatically check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1580"/>
         <source>Breakpoints</source>
-        <translation>Points d&apos;arrêt</translation>
+        <translation>Los puntos de interrupción</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1751"/>
         <location filename="../mainwindow.ui" line="2643"/>
         <source>Registers</source>
-        <translation>Registres</translation>
+        <translation>Registros</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2249"/>
@@ -326,7 +326,7 @@
     <message>
         <location filename="../mainwindow.ui" line="627"/>
         <source>Frame skip:</source>
-        <translation>Saut d&apos;image</translation>
+        <translation>Tasa de salto</translation>
     </message>
     <message>
         <source>1</source>
@@ -335,7 +335,7 @@
     <message>
         <location filename="../mainwindow.ui" line="892"/>
         <source>Change this if your CPU is overloaded.</source>
-        <translation>Changez ceci si votre CPU est surchargé.</translation>
+        <translation>Cambiar esto si su CPU está sobrecargada.</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="885"/>
@@ -353,13 +353,13 @@
     <message>
         <location filename="../mainwindow.ui" line="1262"/>
         <source>Stop</source>
-        <translation>Arrêter</translation>
+        <translation>Terminar</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1467"/>
         <location filename="../mainwindow.ui" line="1613"/>
         <source>Add</source>
-        <translation>Ajouter</translation>
+        <translation>Insertar</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -373,24 +373,24 @@
     <message>
         <location filename="../mainwindow.ui" line="1556"/>
         <source>Data</source>
-        <translation>Données</translation>
+        <translation>Datos</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1561"/>
         <location filename="../mainwindow.ui" line="1726"/>
         <source>Break Read</source>
-        <translation>Arrêt lecture</translation>
+        <translation>Pausa Leer</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1566"/>
         <location filename="../mainwindow.ui" line="1731"/>
         <source>Break Write</source>
-        <translation>Arrêt écriture</translation>
+        <translation>Pausa Escribir</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1571"/>
         <source>Freeze</source>
-        <translation>Geler</translation>
+        <translation>Congelar</translation>
     </message>
     <message>
         <source>3</source>
@@ -399,18 +399,18 @@
     <message>
         <location filename="../mainwindow.ui" line="370"/>
         <source>Select files...</source>
-        <translation>Choisir des fichiers...</translation>
+        <translation>Selecciona archivos...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="518"/>
         <location filename="../mainwindow.cpp" line="666"/>
         <source>Refresh variable list...</source>
-        <translation>Rafraîchir la liste des variables...</translation>
+        <translation>Refrescar lista de variables...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="534"/>
         <source>Save selected</source>
-        <translation>Enregistrer la sélection</translation>
+        <translation>Guardar la sélection</translation>
     </message>
     <message>
         <source>Screenshot as PNG</source>
@@ -423,22 +423,22 @@
     <message>
         <location filename="../mainwindow.ui" line="798"/>
         <source>Automatically save calculator image</source>
-        <translation>Automatiquement sauver l&apos;image de la calculatrice</translation>
+        <translation>Guardar automáticamente la imagen de la calculadora</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="811"/>
         <source>Load saved image on start</source>
-        <translation>Charger l&apos;image sauvée au démarrage</translation>
+        <translation>Cargar guarda la imagen en el arranque</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="926"/>
         <source>Emulation Speed</source>
-        <translation>Vitesse d&apos;émulation</translation>
+        <translation>Velocidad de emulación</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="938"/>
         <source>Throttle:</source>
-        <translation>Limite :</translation>
+        <translation>Acelerador:</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="951"/>
@@ -448,22 +448,22 @@
     <message>
         <location filename="../mainwindow.ui" line="1001"/>
         <source>Show Data column in disassembly</source>
-        <translation>Afficher la colonne des données</translation>
+        <translation>Columna mostrar datos de desmontaje</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1013"/>
         <source>Text size:</source>
-        <translation>Taille du texte</translation>
+        <translation>Tamaño de texto:</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1110"/>
         <source>Key bindings</source>
-        <translation>Raccourcis clavier</translation>
+        <translation>Asociaciones de teclas</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1322"/>
         <source>Step Out</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>5</source>
@@ -472,69 +472,69 @@
     <message>
         <location filename="../mainwindow.ui" line="4114"/>
         <source>CPU State</source>
-        <translation>Etat du CPU</translation>
+        <translation>Estado de la CPU</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5049"/>
         <location filename="../mainwindow.ui" line="5105"/>
         <location filename="../mainwindow.ui" line="5174"/>
         <source>Sync changes</source>
-        <translation>Synchroniser les changements</translation>
+        <translation>Sincronizar</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5167"/>
         <source>Lock position</source>
-        <translation>Vérouiller la position</translation>
+        <translation>Posición de bloqueo</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5220"/>
         <source>Clear console</source>
-        <translation>Vider la console</translation>
+        <translation>Consola limpia</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5307"/>
         <source>Rom setup wizard...</source>
-        <translation>Assistant de config. de la ROM...</translation>
+        <translation>Configuración de ROM...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5326"/>
         <source>Take PNG screenshot...</source>
-        <translation>Prendre une capture d&apos;écran PNG...</translation>
+        <translation>Tome un PNG captura...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5329"/>
         <source>Take PNG screenshot</source>
-        <translation>Prendre une capture d&apos;écran PNG</translation>
+        <translation>Tome un PNG captura</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5340"/>
         <source>Record animated GIF...</source>
-        <translation>Prendre une capture GIF...</translation>
+        <translation>Grabar un GIF...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5343"/>
         <source>Record animated GIF</source>
-        <translation>Prendre une capture GIF</translation>
+        <translation>Grabar un GIF</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5361"/>
         <source>Take GIF screenshot...</source>
-        <translation>Prendre une capture d&apos;écran GIF...</translation>
+        <translation>Tome un GIF captura</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5364"/>
         <source>Take GIF screenshot</source>
-        <translation>Prendre une capture d&apos;écran GIF</translation>
+        <translation>Tome un GIF captura</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5372"/>
         <source>Detached LCD</source>
-        <translation>LCD détaché</translation>
+        <translation>LCD Independiente</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5377"/>
         <source>Check for updates...</source>
-        <translation>Vérifier les mises-à-jour</translation>
+        <translation>Buscar actualizaciones...</translation>
     </message>
     <message>
         <source>Freq</source>
@@ -543,7 +543,7 @@
     <message>
         <location filename="../mainwindow.ui" line="5348"/>
         <source>About Qt</source>
-        <translation>A propos de Qt</translation>
+        <translation>Información de Qt</translation>
     </message>
     <message>
         <source>Bus</source>
@@ -556,13 +556,13 @@
     <message>
         <location filename="../mainwindow.ui" line="4601"/>
         <source>Interrupts</source>
-        <translation>Interruptions</translation>
+        <translation>Interrupciones</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="872"/>
         <location filename="../mainwindow.ui" line="1745"/>
         <source>Display</source>
-        <translation>Ecran</translation>
+        <translation>Monitor</translation>
     </message>
     <message>
         <source>Powered</source>
@@ -571,7 +571,7 @@
     <message>
         <location filename="../mainwindow.ui" line="1974"/>
         <source>Brightness</source>
-        <translation>Luminosité</translation>
+        <translation>Brillo</translation>
     </message>
     <message>
         <source>Debug Console</source>
@@ -584,7 +584,7 @@
     <message>
         <location filename="../mainwindow.ui" line="5190"/>
         <source>Console</source>
-        <translation>Console</translation>
+        <translation>Consola</translation>
     </message>
     <message>
         <source>Receive</source>
@@ -597,12 +597,12 @@
     <message>
         <location filename="../mainwindow.ui" line="494"/>
         <source>Name</source>
-        <translation>Nom</translation>
+        <translation>Nombre</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="499"/>
         <source>Type</source>
-        <translation>Type</translation>
+        <translation>Tipo</translation>
     </message>
     <message>
         <source>Still screenshot</source>
@@ -623,22 +623,22 @@
     <message>
         <location filename="../mainwindow.ui" line="830"/>
         <source>File:</source>
-        <translation>Fichier:</translation>
+        <translation>Archivo:</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="859"/>
         <source>Setup wizard...</source>
-        <translation>Assistant de configuration...</translation>
+        <translation>Configuración...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="878"/>
         <source>Refresh rate:</source>
-        <translation>Taux de rafraîchissement :</translation>
+        <translation>Frecuencia de refresco:</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="995"/>
         <source>Debugger</source>
-        <translation>Débuggeur</translation>
+        <translation>Depuración</translation>
     </message>
     <message>
         <source>Disassembly View</source>
@@ -651,17 +651,17 @@
     <message>
         <location filename="../mainwindow.ui" line="1055"/>
         <source>Add some equates to view defined symbols instead of addresses:</source>
-        <translation>Ajouter des equates pour voir les noms de symboles connus au lieu d&apos;adresses :</translation>
+        <translation>Añadir algunos equivale a ver símbolos definidos en lugar de alocuciónes:</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1070"/>
         <source>Load equates file...</source>
-        <translation>Charger un fichier d&apos;équates...</translation>
+        <translation>Cargar equivale archivo...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1096"/>
         <source>Clear current equates</source>
-        <translation>Effacer les equates actuels</translation>
+        <translation>Equipara Despejado</translation>
     </message>
     <message>
         <source>Text size</source>
@@ -671,12 +671,12 @@
         <location filename="../mainwindow.ui" line="1480"/>
         <location filename="../mainwindow.ui" line="1626"/>
         <source>Remove</source>
-        <translation>Supprimer</translation>
+        <translation>Eliminar</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="1736"/>
         <source>Break Exec</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa Ejecución</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="2609"/>
@@ -695,12 +695,12 @@
     <message>
         <location filename="../mainwindow.ui" line="4519"/>
         <source>Stack</source>
-        <translation></translation>
+        <translation>Apilar</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5011"/>
         <source>Flash</source>
-        <translation></translation>
+        <translation>Memoria de flash</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5029"/>
@@ -708,7 +708,7 @@
         <location filename="../mainwindow.ui" line="5141"/>
         <location filename="../mainwindow.cpp" line="1584"/>
         <source>Search</source>
-        <translation>Recherche</translation>
+        <translation>Buscar</translation>
     </message>
     <message>
         <source>Sync Changes</source>
@@ -717,12 +717,12 @@
     <message>
         <location filename="../mainwindow.ui" line="5067"/>
         <source>RAM</source>
-        <translation></translation>
+        <translation>Memoria de RAM</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5123"/>
         <source>Memory View</source>
-        <translation>Vue mémoire</translation>
+        <translation>Memoria</translation>
     </message>
     <message>
         <source>Lock Position</source>
@@ -731,32 +731,32 @@
     <message>
         <location filename="../mainwindow.ui" line="5247"/>
         <source>&amp;File</source>
-        <translation>&amp;Fichier</translation>
+        <translation>&amp;Archivo</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5260"/>
         <source>S&amp;etup</source>
-        <translation>Configuration</translation>
+        <translation>C&amp;onfiguración</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5277"/>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Opciones</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5289"/>
         <source>Open...</source>
-        <translation>Ouvrir...</translation>
+        <translation>Abrir...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5294"/>
         <source>Save...</source>
-        <translation>Sauver...</translation>
+        <translation>Guardar...</translation>
     </message>
     <message>
         <location filename="../mainwindow.ui" line="5299"/>
         <source>Exit</source>
-        <translation>Quitter</translation>
+        <translation>Terminar</translation>
     </message>
     <message>
         <source>Setup Wizard</source>
@@ -769,7 +769,7 @@
     <message>
         <location filename="../mainwindow.ui" line="5356"/>
         <source>Reset Calculator</source>
-        <translation>Reseter la calculatrice</translation>
+        <translation>Restablecer la calculadora</translation>
     </message>
     <message>
         <source>Take GIF Screenshot...</source>
@@ -778,7 +778,7 @@
     <message>
         <location filename="../mainwindow.ui" line="5267"/>
         <source>About</source>
-        <translation>A propos</translation>
+        <translation>Información</translation>
     </message>
     <message>
         <source>Setup...</source>
@@ -792,7 +792,7 @@
         <location filename="../mainwindow.ui" line="5315"/>
         <location filename="../mainwindow.cpp" line="523"/>
         <source>About CEmu</source>
-        <translation>A propos de CEmu</translation>
+        <translation>Información de CEmu</translation>
     </message>
     <message>
         <source>Take Screenshot...</source>
@@ -805,50 +805,50 @@
     <message>
         <location filename="../mainwindow.cpp" line="342"/>
         <source>Docks</source>
-        <translation>Docks</translation>
+        <translation>Pantallas</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="376"/>
         <location filename="../mainwindow.cpp" line="392"/>
         <source>Save Screenshot</source>
-        <translation>Enregistrer la capture</translation>
+        <translation>Guardar la imagen</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="376"/>
         <source>PNG images (*.png)</source>
-        <translation>Images PNG (*.png)</translation>
+        <translation>Imagenes de PNG (*.png)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="382"/>
         <location filename="../mainwindow.cpp" line="398"/>
         <source>Screenshot failed</source>
-        <translation>Erreur de capture</translation>
+        <translation>Guardar error</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="382"/>
         <location filename="../mainwindow.cpp" line="398"/>
         <source>Failed to save screenshot!</source>
-        <translation>La capture n&apos;a pas pu être sauvegardée!</translation>
+        <translation>Error al guardar la captura!</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="388"/>
         <source>Recording GIF</source>
-        <translation>Enregistrement GIF</translation>
+        <translation>Grabación GIF</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="388"/>
         <source>Currently recording GIF.</source>
-        <translation>Enregistrement GIF en cours</translation>
+        <translation>Esta grabar un GIF.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="412"/>
         <source>Save Recording</source>
-        <translation>Enregistrer la capture</translation>
+        <translation>Guardar la captura</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="465"/>
         <source>Update check disabled</source>
-        <translation>Vérification des mises-à-jour désactivée</translation>
+        <translation>Actualización de verificación deshabilitado</translation>
     </message>
     <message>
         <source>Checking updates is disabled for dev. builds</source>
@@ -857,59 +857,59 @@
     <message>
         <location filename="../mainwindow.cpp" line="480"/>
         <source>No update available</source>
-        <translation>Pas de mise-à-jour disponible</translation>
+        <translation>Sin actualización disponible</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="480"/>
         <source>You already have the latest CEmu version (</source>
-        <translation>Vous avez déjà la dernière version de CEmu (</translation>
+        <translation>Ya tiene la última versión de CEmu (</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="486"/>
         <source>CEmu update</source>
-        <translation>Mise-à-jour de CEmu</translation>
+        <translation>Actualización de Cému</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="487"/>
         <source>&lt;b&gt;A new version of CEmu is available!&lt;/b&gt;&lt;br/&gt;You can &lt;a href=&apos;%1&apos;&gt;download it here&lt;/a&gt;.</source>
-        <translation>&lt;b&gt;Une nouvelle version de CEmu est disponible !&lt;/b&gt;&lt;br/&gt;Vous pouvez la &lt;a href=&apos;%1&apos;&gt;télécharger ici&lt;/a&gt;.</translation>
+        <translation>&lt;b&gt;Una nueva versión de CEmu está disponible!&lt;/b&gt;&lt;br/&gt;Puede &lt;a href=&apos;%1&apos;&gt;descargarlo aquí&lt;/a&gt;.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="501"/>
         <source>Update check failed</source>
-        <translation>Erreur de vérification des mises-à-jour</translation>
+        <translation>Actualización cheque esta roto</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="502"/>
         <source>&lt;b&gt;An error occurred while checking for CEmu updates.&lt;/b&gt;&lt;br/&gt;You can however &lt;a href=&apos;https://github.com/MateoConLechuga/CEmu/releases/latest&apos;&gt;go here&lt;/a&gt; to check yourself.</source>
-        <translation>&lt;b&gt;Une erreur est survenue lors de la vérification de mises-à-jour de CEmu.&lt;/b&gt;&lt;br/&gt;Vous pouvez cependant aller les vérifier par vous-même&lt;a href=&apos;https://github.com/MateoConLechuga/CEmu/releases/latest&apos;&gt;par ici&lt;/a&gt;.</translation>
+        <translation>&lt;b&gt;Se ha producido un error al buscar actualizaciones de CEmu.&lt;/b&gt;&lt;br/&gt;Sin embargo, puede navigar a&lt;a href=&apos;https://github.com/MateoConLechuga/CEmu/releases/latest&apos;&gt;&lt;/a&gt;.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="525"/>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="612"/>
         <source>TI Variable (*.8xp *.8xv *.8xl *.8xn *.8xm *.8xy *.8xg *.8xs *.8ci *.8xd *.8xw *.8xc *.8xl *.8xz *.8xt *.8ca);;All Files (*.*)</source>
-        <translation>Variable TI (*.8xp *.8xv *.8xl *.8xn *.8xm *.8xy *.8xg *.8xs *.8ci *.8xd *.8xw *.8xc *.8xl *.8xz *.8xt *.8ca);;All Files (*.*)</translation>
+        <translation>Un variable de TI (*.8xp *.8xv *.8xl *.8xn *.8xm *.8xy *.8xg *.8xs *.8ci *.8xd *.8xw *.8xc *.8xl *.8xz *.8xt *.8ca);;All Files (*.*)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="630"/>
         <location filename="../mainwindow.cpp" line="715"/>
         <source>Failed Transfer</source>
-        <translation>Transfert échoué</translation>
+        <translation>Transferencia Error</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="630"/>
         <location filename="../mainwindow.cpp" line="715"/>
         <source>A failure occured during transfer of: </source>
-        <translation>Une erreur est survenue lors du transfert de :</translation>
+        <translation>Se produjo un error durante la transferencia de:</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="672"/>
         <source>Resume emulation</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Continue Emulation</source>
@@ -918,17 +918,17 @@
     <message>
         <location filename="../mainwindow.cpp" line="1505"/>
         <source>Goto Address</source>
-        <translation>Aller à l&apos;addresse</translation>
+        <translation>Localización</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1506"/>
         <source>Input Address (In Hexadecimal):</source>
-        <translation>Addresse (en hexadécimal) :</translation>
+        <translation>Localización (en hexadécimal) :</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1585"/>
         <source>Input Hexadecimal Search String:</source>
-        <translation>Addresse (en hexadécimal) :</translation>
+        <translation>Localización (en hexadécimal) :</translation>
     </message>
     <message>
         <source>Flash Search</source>
@@ -949,73 +949,73 @@
     <message>
         <location filename="../mainwindow.cpp" line="1709"/>
         <source>Equates Cleared</source>
-        <translation>Equates remis à zéro</translation>
+        <translation>Equivales estan borraden</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1709"/>
         <source>Cleared disassembly equates.</source>
-        <translation>Les equates ont été supprimés.</translation>
+        <translation>Desmontaje borrado iguala.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1720"/>
         <source>ASM equates file (*.inc)</source>
-        <translation>Fichier d&apos;equates ASM (*.inc)</translation>
+        <translation>Archivo de equates ASM (*.inc)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1721"/>
         <source>Symbol Table File (*.lab)</source>
-        <translation>Fichier de Symbol Table (*.lab)</translation>
+        <translation>Archivo de Symbol Table (*.lab)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1759"/>
         <source>Equates Loaded</source>
-        <translation>Equates chargés</translation>
+        <translation>Equivales cargadan</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1759"/>
         <source>Loaded disassembly equates.</source>
-        <translation>Les équates ont été chargés.</translation>
+        <translation>Desmontaje Cargado iguala.</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1762"/>
         <source>Error</source>
-        <translation>Erreur</translation>
+        <translation>Error</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="1762"/>
         <source>Couldn&apos;t open this file</source>
-        <translation>Impossible d&apos;ouvrir ce fichier</translation>
+        <translation>No se puede abrir este archivo</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="392"/>
         <location filename="../mainwindow.cpp" line="412"/>
         <source>GIF images (*.gif)</source>
-        <translation>Images GIF (*.gif)</translation>
+        <translation>Imagenes GIF (*.gif)</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="299"/>
         <source>Actual Speed: </source>
-        <translation>Vitesse effective:</translation>
+        <translation>Velocidad Real:</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="420"/>
         <source>Failed recording GIF</source>
-        <translation>Erreur de la capture GIF</translation>
+        <translation>No se ha podido grabar GIF</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="420"/>
         <source>A failure occured during recording</source>
-        <translation>Une erreur est survenue lors de la capture</translation>
+        <translation>Se produjo un error durante la grabación</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="465"/>
         <source>Checking updates is disabled for developer builds</source>
-        <translation type="unfinished"></translation>
+        <translation>Comprobación de actualizaciones está deshabilitado para desarrollador construye</translation>
     </message>
     <message>
         <location filename="../mainwindow.cpp" line="531"/>
         <source>&lt;h3&gt;CEmu %1&lt;/h3&gt;&lt;a href=&apos;https://github.com/MateoConLechuga/CEmu&apos;&gt;On GitHub&lt;/a&gt;&lt;br&gt;&lt;br&gt;Main authors:&lt;br&gt;Matt Waltz (&lt;a href=&apos;https://github.com/MateoConLechuga&apos;&gt;MateoConLechuga&lt;/a&gt;)&lt;br&gt;Jacob Young (&lt;a href=&apos;https://github.com/jacobly0&apos;&gt;jacobly0&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Other contributors:&lt;br&gt;Adrien Bertrand (&lt;a href=&apos;https://github.com/adriweb&apos;&gt;adriweb&lt;/a&gt;)&lt;br&gt;Lionel Debroux (&lt;a href=&apos;https://github.com/debrouxl&apos;&gt;debrouxl&lt;/a&gt;)&lt;br&gt;Fabian Vogt (&lt;a href=&apos;https://github.com/Vogtinator&apos;&gt;Vogtinator&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Many thanks to the &lt;a href=&apos;https://github.com/KnightOS/z80e&apos;&gt;z80e&lt;/a&gt; (MIT license &lt;a href=&apos;https://github.com/KnightOS/z80e/blob/master/LICENSE&apos;&gt;here&lt;/a&gt;) and &lt;a href=&apos;https://github.com/nspire-emus/firebird&apos;&gt;Firebird&lt;/a&gt; (GPLv3 license &lt;a href=&apos;https://github.com/nspire-emus/firebird/blob/master/LICENSE&apos;&gt;here&lt;/a&gt;) projects&lt;br&gt;&lt;br&gt;This work is licensed under the GPLv3.&lt;br&gt;To view a copy of this license, visit &lt;a href=&apos;https://www.gnu.org/licenses/gpl-3.0.html&apos;&gt;https://www.gnu.org/licenses/gpl-3.0.html&lt;/a&gt;</source>
-        <translation>&lt;h3&gt;CEmu %1&lt;/h3&gt;&lt;a href=&apos;https://github.com/MateoConLechuga/CEmu&apos;&gt;Sur GitHub&lt;/a&gt;&lt;br&gt;&lt;br&gt;Auteurs principaux:&lt;br&gt;Matt Waltz (&lt;a href=&apos;https://github.com/MateoConLechuga&apos;&gt;MateoConLechuga&lt;/a&gt;)&lt;br&gt;Jacob Young (&lt;a href=&apos;https://github.com/jacobly0&apos;&gt;jacobly0&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Autres contributeurs:&lt;br&gt;Adrien Bertrand (&lt;a href=&apos;https://github.com/adriweb&apos;&gt;adriweb&lt;/a&gt;)&lt;br&gt;Lionel Debroux (&lt;a href=&apos;https://github.com/debrouxl&apos;&gt;debrouxl&lt;/a&gt;)&lt;br&gt;Fabian Vogt (&lt;a href=&apos;https://github.com/Vogtinator&apos;&gt;Vogtinator&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Un grand merci aux projets &lt;a href=&apos;https://github.com/KnightOS/z80e&apos;&gt;z80e&lt;/a&gt; (licence MIT &lt;a href=&apos;https://github.com/KnightOS/z80e/blob/master/LICENSE&apos;&gt;ici&lt;/a&gt;) et &lt;a href=&apos;https://github.com/nspire-emus/firebird&apos;&gt;Firebird&lt;/a&gt; (license GPLv3 &lt;a href=&apos;https://github.com/nspire-emus/firebird/blob/master/LICENSE&apos;&gt;ici&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Projet sous licence GPLv3.&lt;br&gt;Pour voir une copie de cette licence, visitez &lt;a href=&apos;https://www.gnu.org/licenses/gpl-3.0.html&apos;&gt;https://www.gnu.org/licenses/gpl-3.0.html&lt;/a&gt;</translation>
+        <translation>&lt;h3&gt;CEmu %1&lt;/h3&gt;&lt;a href=&apos;https://github.com/MateoConLechuga/CEmu&apos;&gt;Por GitHub&lt;/a&gt;&lt;br&gt;&lt;br&gt;Autores principales:&lt;br&gt;Matt Waltz (&lt;a href=&apos;https://github.com/MateoConLechuga&apos;&gt;MateoConLechuga&lt;/a&gt;)&lt;br&gt;Jacob Young (&lt;a href=&apos;https://github.com/jacobly0&apos;&gt;jacobly0&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Autores de las contribuciones:&lt;br&gt;Adrien Bertrand (&lt;a href=&apos;https://github.com/adriweb&apos;&gt;adriweb&lt;/a&gt;)&lt;br&gt;Lionel Debroux (&lt;a href=&apos;https://github.com/debrouxl&apos;&gt;debrouxl&lt;/a&gt;)&lt;br&gt;Fabian Vogt (&lt;a href=&apos;https://github.com/Vogtinator&apos;&gt;Vogtinator&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Muchas gracias a proyectos de &lt;a href=&apos;https://github.com/KnightOS/z80e&apos;&gt;z80e&lt;/a&gt; (licencia MIT &lt;a href=&apos;https://github.com/KnightOS/z80e/blob/master/LICENSE&apos;&gt;aquí&lt;/a&gt;) y &lt;a href=&apos;https://github.com/nspire-emus/firebird&apos;&gt;Firebird&lt;/a&gt; (licencia GPLv3 &lt;a href=&apos;https://github.com/nspire-emus/firebird/blob/master/LICENSE&apos;&gt;aquí&lt;/a&gt;)&lt;br&gt;&lt;br&gt;Este proyecto utiliza la licencia de GPLv3.&lt;br&gt;Para obtener una copia de la licencia, visita &lt;a href=&apos;https://www.gnu.org/licenses/gpl-3.0.html&apos;&gt;https://www.gnu.org/licenses/gpl-3.0.html&lt;/a&gt;</translation>
     </message>
     <message>
         <source>TI Variable (*.8xp)</source>
@@ -1031,7 +1031,7 @@
     <message>
         <location filename="../qtframebuffer.cpp" line="43"/>
         <source>LCD OFF</source>
-        <translation>LCD éteint</translation>
+        <translation>LCD esta apagado</translation>
     </message>
 </context>
 <context>
@@ -1039,12 +1039,12 @@
     <message>
         <location filename="../romselection.ui" line="99"/>
         <source>CEmu Setup</source>
-        <translation>Configuration de CEmu</translation>
+        <translation>Configuración de CEmu</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="188"/>
         <source>CEmu ROM Selection</source>
-        <translation>Choix de l&apos;image ROM</translation>
+        <translation>Elija una imagen de ROM</translation>
     </message>
     <message>
         <source>CEmu requires a ROM image in order to emulate CE calculators.</source>
@@ -1053,7 +1053,7 @@
     <message>
         <location filename="../romselection.ui" line="222"/>
         <source>Finish</source>
-        <translation>Fin</translation>
+        <translation>Terminar</translation>
     </message>
     <message>
         <source>Click this button to save the dumper program to your computer.</source>
@@ -1062,17 +1062,17 @@
     <message>
         <location filename="../romselection.ui" line="360"/>
         <source>Then, send the &apos;Dump&apos; program to your calculator.</source>
-        <translation>Ensuite, transférez le programme &apos;Dump&apos; sur votre calculatrice.</translation>
+        <translation>Entonces, envía la programa &apos;Dump&apos; a tu calculadora.</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="434"/>
         <source>The ROM dump program has now created segments of your ROM, each stored in a single variable. Using your computer&apos;s calculator connectivity software, copy all the variables prefixes with &quot;ROMData&quot; to your computer.</source>
-        <translation>Le programme de dump de ROM a désormais créé les segments de la ROM, chacun dans une variable respective. Avec votre logiciel de transfert, récupérez toutes les variables commençant par &quot;ROMData&quot; sur votre ordinateur.</translation>
+        <translation>La programa creado secciones de tu ROM. Utilizar tu computerdora , transferir todas las variables con el prefijo &quot; ROMData &quot; de la calculadora.</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="575"/>
         <source>Choose a place to save your ROM image. Once complete, CEmu will load it automatically.</source>
-        <translation>Choisissez où enregistrer l&apos;image ROM. Une fois ceci fait, CEmu la chargera automatiquement.</translation>
+        <translation>Elija un lugar para guardar la imagen de la ROM. Una vez terminado, CEmu cargará automáticamente.</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="353"/>
@@ -1082,62 +1082,62 @@
     <message>
         <location filename="../romselection.ui" line="274"/>
         <source>Welcome to CEmu! In order to get started, you will need to provide what is known as a ROM image. This is simply a file that contains the necessary instructions to start the calculator. You can either create one here; or select an already saved one from your computer.</source>
-        <translation>Bienvenue sur CEmu ! Pour commencer, vous devez fournir ce qui s&apos;appel une image ROM. C&apos;est simplement un fichier permettant de démarrer la calculatrice. Vous pouvez soit en créer un avec cet assistant, soit en choisir un existant sur votre ordinateur.</translation>
+        <translation>Bienvenido a CEmu! Para empezar, tendrá que proporcionar lo que se conoce como una imagen de ROM. Esto es simplemente un archivo que contiene las instrucciones necesarias para iniciar la calculadora. Usted puede crear una aquí; o seleccionar uno ya salvado de su computerdora.</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="326"/>
         <source>CEmu Version: </source>
-        <translation>Version de CEmu :</translation>
+        <translation>Versión de CEmu :</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="337"/>
         <source>Click the this button to save the dumper program to your computer.</source>
-        <translation>Cliquez sur ce bouton pour enregistrer le programme de dump.</translation>
+        <translation>Haga clic en este botón para guardar el programa dumper a su computadora.</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="370"/>
         <source>To run the program, select Asm( from the catolog by pressing [2nd][0].</source>
-        <translation>Pour lancer le programme, choisissez Asm( depuis le catalogue ([2nd][0]).</translation>
+        <translation>Para ejecutar el programa , seleccione Asm( del catolog pulsando ([2nd][0]).</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="393"/>
         <source>Press [enter]. Once the program is done, click the &quot;Next&quot; button.</source>
-        <translation>Appuyez sur [enter]. Une fois que le programme a fini, appuyez sur le bouton Suivant.</translation>
+        <translation>Pulse [enter] . Una vez que el programa haya terminado, haga clic en el botón &quot;Continuar&quot; .</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="409"/>
         <source>Next</source>
-        <translation>Suivant</translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="447"/>
         <source>Select all of them with the &quot;Open Segments&quot; button below.</source>
-        <translation>Appuyez sur le bouton suivant et choisissez-les tous.</translation>
+        <translation>Seleccionar todos con el botón &quot;Abrir Secciones&quot; para continuar .</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="463"/>
         <source>Open Segments</source>
-        <translation>Ouvrir les segments</translation>
+        <translation>Abrir Secciones</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="497"/>
         <source>Expert Options</source>
-        <translation>Options pour experts</translation>
+        <translation>Opciones de expertos</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="509"/>
         <source>Use default state</source>
-        <translation>Utiliser l&apos;état par défaut</translation>
+        <translation>Estado predeterminado</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="525"/>
         <source>Set emulator flag variable</source>
-        <translation>Utiliser le flag d&apos;émulation</translation>
+        <translation>Establezca la variable emulador</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="541"/>
         <source>Ignore Flash commands</source>
-        <translation>Ignorer les actions Flash</translation>
+        <translation>Olvídese de comandos de Flash</translation>
     </message>
     <message>
         <source>Please select an option to load a ROM image.</source>
@@ -1146,12 +1146,12 @@
     <message>
         <location filename="../romselection.ui" line="290"/>
         <source>Browse my computer for a ROM image</source>
-        <translation>Choisir une ROM existante sur l&apos;ordinateur</translation>
+        <translation>Elija la imagen ROM de su computerdora</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="306"/>
         <source>Create a ROM image from a real calculator</source>
-        <translation>Créer une ROM à partir d&apos;une vraie calculatrice</translation>
+        <translation>Crear una imagen de ROM de su calculadora</translation>
     </message>
     <message>
         <source>Continue</source>
@@ -1160,33 +1160,33 @@
     <message>
         <location filename="../romselection.ui" line="203"/>
         <source>Cancel</source>
-        <translation>Annuler</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <location filename="../romselection.ui" line="262"/>
         <location filename="../romselection.ui" line="562"/>
         <source>Browse</source>
-        <translation>Parcourir</translation>
+        <translation>Encontrar</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="104"/>
         <source>Open ROM file</source>
-        <translation>Ouvrir la ROM</translation>
+        <translation>Abrir la imagen de ROM</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="105"/>
         <source>Known Types (*.rom *.sav);;ROM Image (*.rom);;Saved Image (*.sav);;All Files (*.*)</source>
-        <translation>Types connus (*&gt;rom, *.sav);;Image ROM (*.rom);;Images sauvées (*.sav);;Tous les fichiers (*.*)</translation>
+        <translation>Los tipos conocidos (*&gt;rom, *.sav);;Imagen de ROM (*.rom);;Imagenes guardares (*.sav);;Todos los archivos (*.*)</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="111"/>
         <source>Invalid ROM image</source>
-        <translation>Image ROM invalide</translation>
+        <translation>Imagen de la ROM inválido</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="111"/>
         <source>You have selected an invalid ROM image.</source>
-        <translation>Vous avez choisi une image ROM invalide.</translation>
+        <translation>Ha seleccionado una imagen ROM inválido.</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="131"/>
@@ -1197,22 +1197,22 @@
         <location filename="../romselection.cpp" line="169"/>
         <location filename="../romselection.cpp" line="172"/>
         <source>Invalid</source>
-        <translation>Invalide</translation>
+        <translation>Inválido</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="169"/>
         <source>Invalid ROM segment.</source>
-        <translation>Segment de ROM invalide.</translation>
+        <translation>Sección de ROM esta inválido.</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="172"/>
         <source>Invalid ROM segment name.</source>
-        <translation>Nom du segment de ROM invalide.</translation>
+        <translation>Inválido nombre de la sección ROM.</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="186"/>
         <source>Save ROM Dumper Program</source>
-        <translation>Enregistrer le programme de dump de ROM</translation>
+        <translation>Guardar la programa ROM Dumper</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="186"/>
@@ -1222,12 +1222,12 @@
     <message>
         <location filename="../romselection.cpp" line="210"/>
         <source>Save ROM Image</source>
-        <translation>Enregistrer l&apos;image ROM</translation>
+        <translation>Ahorrar imagen de ROM</translation>
     </message>
     <message>
         <location filename="../romselection.cpp" line="210"/>
         <source>ROM Image (*.rom)</source>
-        <translation>Image ROM (*.rom)</translation>
+        <translation>Imagen de ROM (*.rom)</translation>
     </message>
 </context>
 <context>
