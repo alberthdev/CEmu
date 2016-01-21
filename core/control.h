@@ -7,13 +7,24 @@ extern "C" {
 
 #include "apb.h"
 
+enum {
+    BATTERY_DISCHARGED,
+    BATTERY_0,
+    BATTERY_1,
+    BATTERY_2,
+    BATTERY_3,
+    BATTERY_4
+};
+
 typedef struct control_state {
     uint8_t ports[0x80];
-    uint8_t cpu_speed;
-    uint8_t device_type;
-    uint8_t unknown; /* coresponds with 0x5E in ROM file. */
+    uint8_t cpuSpeed;
     bool noPlugAInserted;
     bool USBConnected;
+
+    uint8_t setBatteryStatus;
+    uint8_t readBatteryStatus;
+    bool batteryCharging;
 } control_state_t;
 
 /* Global CONTROL state */

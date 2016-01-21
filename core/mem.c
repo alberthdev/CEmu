@@ -71,25 +71,25 @@ static uint32_t flash_address(uint32_t address, uint32_t *size) {
             cpu.cycles += 258;
         }
     } else if (!size) {
-        cpu.cycles += 6 + flash.added_wait_states;
+        cpu.cycles += 6 + flash.addedWaitStates;
     }
     return address;
 }
 
-uint8_t *phys_mem_ptr(uint32_t addr, uint32_t size) {
+uint8_t *phys_mem_ptr(uint32_t address, uint32_t size) {
     uint8_t **block;
     uint32_t block_size, end_addr;
-    if (addr < 0xD00000) {
-        addr = flash_address(addr, &block_size);
+    if (address < 0xD00000) {
+        address = flash_address(address, &block_size);
         block = &mem.flash.block;
     } else {
-        addr -= 0xD00000;
+        address -= 0xD00000;
         block = &mem.ram.block;
         block_size = ram_size;
     }
-    end_addr = addr + size;
-    if (addr <= end_addr && addr <= block_size && end_addr <= block_size && *block) {
-        return *block + addr;
+    end_addr = address + size;
+    if (address <= end_addr && address <= block_size && end_addr <= block_size && *block) {
+        return *block + address;
     }
     return NULL;
 }
@@ -223,7 +223,7 @@ static uint8_t flash_read_handler(uint32_t address) {
                 }
                 break;
             case FLASH_CHIP_ERASE:
-                value = 0x80;
+                value = 0xFF;
                 mem.flash.command = NO_COMMAND;
                 break;
             case FLASH_READ_SECTOR_PROTECTION:
@@ -312,8 +312,8 @@ uint8_t mem_read_byte(uint32_t address) {
             break;
     }
 #ifdef DEBUG_SUPPORT
-    if (!in_debugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
-        openDebugger(HIT_READ_BREAKPOINT, address);
+    if (!inDebugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
+        open_debugger(HIT_READ_BREAKPOINT, address);
     }
 #endif
     return value;
@@ -353,8 +353,8 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
             break;
     }
 #ifdef DEBUG_SUPPORT
-    if (!in_debugger && debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
-        openDebugger(HIT_WRITE_BREAKPOINT, address);
+    if (!inDebugger && debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
+        open_debugger(HIT_WRITE_BREAKPOINT, address);
     }
 #endif
 }

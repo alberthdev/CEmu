@@ -15,25 +15,23 @@ static uint8_t control_read(const uint16_t pio) {
 
     switch (index) {
         case 0x01:
-            value = control.cpu_speed & 19;
+            value = control.cpuSpeed;
             break;
         case 0x02:
-            /* bit 1 set (battery stuff) */
-            value = control.ports[index] | 1;
+            /* Set bit 1 to set battery state */
+            value = control.readBatteryStatus;
             break;
         case 0x03:
             value = get_device_type();
             break;
         case 0x0B:
             /* bit 2 set if charging */
-            if( (control.ports[0x0A] & 2) == 0 ) {
-                control.ports[index] |= 2;
-            }
+            control.ports[index] |= (control.batteryCharging == true)<<1;
             value = control.ports[index];
             break;
         case 0x0F:
             value = control.ports[index];
-            if(control.USBConnected) { value |= 0x80; }
+            if(control.USBConnected)    { value |= 0x80; }
             if(control.noPlugAInserted) { value |= 0x40; }
             break;
         case 0x28:
@@ -53,24 +51,24 @@ static void control_write(const uint16_t pio, const uint8_t byte) {
     switch (index) {
         case 0x00:
             control.ports[index] = byte;
-            switch (control.unknown) {
-                case 2:
-                    control.unknown = (byte == 0x83 ? 3 : 0);
+            switch (control.readBatteryStatus) {
+                case 3: /* Battery Level is 0 */
+                    control.readBatteryStatus = (control.setBatteryStatus == BATTERY_0) ? 0 : (byte == 0x83) ? 5 : 0;
                     break;
-                case 6:
-                    control.unknown = (byte == 0x03 ? 7 : 0);
+                case 5: /* Battery Level is 1 */
+                    control.readBatteryStatus = (control.setBatteryStatus == BATTERY_1) ? 0 : (byte == 0x03) ? 7 : 0;
                     break;
-                case 8:
-                    control.unknown = (byte == 0x83 ? 9 : 0);
+                case 7: /* Battery Level is 2 */
+                    control.readBatteryStatus = (control.setBatteryStatus == BATTERY_2) ? 0 : (byte == 0x83) ? 9 : 0;
                     break;
-                case 9:
-                    control.unknown = (byte == 0x03 ? 10 : 0);
+                case 9: /* Battery Level is 3 (Or 4) */
+                    control.readBatteryStatus = (control.setBatteryStatus == BATTERY_3) ? 0 : (byte == 0x03) ? 11 : 0;
                     break;
             }
             break;
         case 0x01:
-            control.cpu_speed = byte & 19;
-            switch(control.cpu_speed & 3) {
+            control.cpuSpeed = byte & 19;
+            switch(control.cpuSpeed & 3) {
                 case 0:
                     set_cpu_clock_rate(6e6);  /* 6 MHz  */
                     break;
@@ -86,64 +84,29 @@ static void control_write(const uint16_t pio, const uint8_t byte) {
                 default:
                     break;
             }
-            gui_console_printf("CPU clock rate set to: %d MHz\n", 6*(1<<(control.cpu_speed & 3)));
-            break;
-        case 0x02:
-            control.ports[index] = 0;
-            break;
-        case 0x04:
-        case 0x05:
-        case 0x08:
-        case 0x1D:
-        case 0x1E:
-        case 0x1F:
-            control.ports[index] = byte;
+            gui_console_printf("CPU clock rate set to: %d MHz\n", 6*(1<<(control.cpuSpeed & 3)));
             break;
         case 0x06:
             control.ports[index] = byte & 7;
             break;
         case 0x07:
-            if (control.unknown == 0) {
-                if (byte & 0x90) {
-                    control.unknown = 1;
-                }
-            } else {
-               control.unknown = 0;
-            }
-            control.ports[index] = byte;
+            control.readBatteryStatus = (byte & 0x90) ? 1 : 0;
             break;
         case 0x09:
-            switch (control.unknown) {
-                case 1:
-                    control.unknown = ((byte & 0x80) != 0x00) ? 2 : 0;
-                    break;
-                case 4:
-                    control.unknown = ((byte & 0x90) == 0x90) ? 5 : 0;
-                    break;
-                case 5:
-                    control.unknown = ((byte & 0x10) == 0x00) ? 6 : 0;
-                    break;
-                case 7:
-                    control.unknown = ((byte & 0x80) == 0x00) ? 8 : 0;
-                    break;
-                default:
+            switch (control.readBatteryStatus) {
+                case 1: /* Battery is bad */
+                    control.readBatteryStatus = (control.setBatteryStatus == BATTERY_DISCHARGED) ? 0 : (byte & 0x80) ? 0 : 3;
                     break;
             }
             control.ports[index] = byte;
             break;
         case 0x0A:
-            if( control.unknown == 3) {
-                control.unknown = (byte & 1) ? 4 : 0;
-            }
+            control.readBatteryStatus += (control.readBatteryStatus == 3) ? 1 : 0;
             control.ports[index] = byte;
             break;
         case 0x0B:
         case 0x0C:
-            control.unknown = 0;
-            control.ports[index] = byte;
-            break;
-        case 0x0E:
-            control.ports[index] = byte;
+            control.readBatteryStatus = 0;
             break;
         case 0x0D:
             control.ports[index] = (byte & 0xF) << 4 | (byte & 0xF);
@@ -151,19 +114,12 @@ static void control_write(const uint16_t pio, const uint8_t byte) {
         case 0x0F:
             control.ports[index] = byte & 3;
             break;
-        case 0x20:
-        case 0x21:
-        case 0x22:
-        case 0x23:
-        case 0x24:
-        case 0x25:
-            control.ports[index] = byte;
-            break;
         case 0x28:
             mem.flash.locked = (byte & 4) == 0;
             control.ports[index] = byte & 247;
             break;
         default:
+            control.ports[index] = byte;
             break;
     }
 }
@@ -176,34 +132,9 @@ static const eZ80portrange_t device = {
 eZ80portrange_t init_control(void) {
     memset(control.ports, 0, sizeof control.ports);
 
-    control.unknown = mem.flash.block[0x5E];
-
-    control.ports[0x00] = 0x03; /* From WikiTI      */
-    control.ports[0x01] = 0x03; /* From WikiTI      */
-    control.ports[0x02] = 0x01; /* Probably right   */
-    control.ports[0x05] = 0x76; /* From WikiTI      */
-    control.ports[0x06] = 0x03; /* From WikiTI      */
-    control.ports[0x07] = 0xB7; /* From WikiTI      */
-    control.ports[0x08] = 0x7F; /* WikiTI's :: 0x7F */
-    control.ports[0x0B] = 0xFE; /* WikiTI's :: 0xFC */
-    control.ports[0x0D] = 0xFF; /* From WikiTI      */
-    control.ports[0x0E] = 0x0A; /* Good             */
-    control.ports[0x0F] = 0x42; /* Good             */
-    control.ports[0x1C] = 0x80; /* From WikiTI      */
-    control.ports[0x1F] = 0x42; /* WikiTI's :: 0x42 */
-    control.ports[0x22] = 0xD0; /* Probably right   */
-    control.ports[0x23] = 0xFF; /* Probably right   */
-    control.ports[0x24] = 0xFF; /* Probably right   */
-    control.ports[0x25] = 0xD3; /* Probably right   */
-    control.ports[0x2A] = 0x70; /* Good             */
-    control.ports[0x2B] = 0xFE; /* Good             */
-    control.ports[0x2C] = 0xFF; /* Probably right   */
-    control.ports[0x30] = 0xFF; /* Probably right   */
-    control.ports[0x34] = 0x30; /* Probably right   */
-    control.ports[0x35] = 0x03; /* Probably right   */
-    control.ports[0x3A] = 0xFF; /* Probably right   */
-    control.ports[0x3B] = 0xFF; /* Probably right   */
-    control.ports[0x3C] = 0xDF; /* Probably right   */
+    /* Set default state to full battery and not charging */
+    control.batteryCharging = false;
+    control.setBatteryStatus = BATTERY_4;
 
     return device;
 }

@@ -82,8 +82,6 @@ void asic_init(void) {
     asic.mem = &mem;
     asic.cpu = &cpu;
 
-    asic.battery = BATTERIES_GOOD;
-
     plug_devices();
     gui_console_printf("Initialized ASIC...\n");
 }
@@ -101,8 +99,8 @@ void asic_free(void) {
 void asic_reset(void) {
     unsigned int i;
 
-    sched.clock_rates[CLOCK_CPU] = 48000000;
-    sched.clock_rates[CLOCK_APB] = 48000000;
+    sched.clockRates[CLOCK_CPU] = 48000000;
+    sched.clockRates[CLOCK_APB] = 48000000;
 
     for(i = 0; i < reset_proc_count; i++) {
         reset_procs[i]();
@@ -110,15 +108,15 @@ void asic_reset(void) {
 }
 
 void set_device_type(ti_device_type device) {
-    asic.device_type = device;
+    asic.deviceType = device;
 }
 
 ti_device_type get_device_type(void) {
-    return asic.device_type;
+    return asic.deviceType;
 }
 
 uint32_t set_cpu_clock_rate(uint32_t new_rate) {
-    uint32_t old_rate = sched.clock_rates[CLOCK_CPU];
+    uint32_t old_rate = sched.clockRates[CLOCK_CPU];
     uint32_t cpu_new_rate[1] = { new_rate };
     sched_set_clocks(1, cpu_new_rate);
 

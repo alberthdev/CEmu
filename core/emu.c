@@ -31,7 +31,7 @@ volatile bool exiting;
 void throttle_interval_event(int index) {
     event_repeat(index, 27000000 / 60);
 
-    gui_do_stuff(true);
+    gui_do_stuff();
 
     throttle_timer_wait();
 }
@@ -224,7 +224,7 @@ static void emu_main_loop(void) {
         }
         if (!cpu.halted && cpu_events & EVENT_DEBUG_STEP) {
             cpu_events &= ~EVENT_DEBUG_STEP;
-            openDebugger(DBG_STEP, 0);
+            open_debugger(DBG_STEP, 0);
         }
         sched_process_pending_events();
         cpu_execute();  // execute instructions with available clock cycles
