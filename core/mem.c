@@ -58,10 +58,7 @@ void mem_reset(void) {
 }
 
 static uint32_t flash_address(uint32_t address, uint32_t *size) {
-    uint32_t mask = ((0x10000 << (flash.map & 7)) - 1) & 0x3FFFFF;
-    if (flash.map & 8) {
-        mask = 0xFFFF;
-    }
+    uint32_t mask = flash.mask;
     if (size) {
         *size = mask + 1;
     }
@@ -203,12 +200,6 @@ static uint8_t flash_read_handler(uint32_t address) {
     uint8_t sector;
 
     address = flash_address(address, NULL);
-    if (address < 0x10000) {
-        sector = address/flash_sector_size_8K;
-    } else {
-        sector = (address/flash_sector_size_64K)+7;
-    }
-
     if (flash.mapped) {
         switch(mem.flash.command) {
             case NO_COMMAND:
@@ -227,6 +218,11 @@ static uint8_t flash_read_handler(uint32_t address) {
                 mem.flash.command = NO_COMMAND;
                 break;
             case FLASH_READ_SECTOR_PROTECTION:
+                if (address < 0x10000) {
+                    sector = address/flash_sector_size_8K;
+                } else {
+                    sector = (address/flash_sector_size_64K)+7;
+                }
                 value = (uint8_t)mem.flash.sector[sector].locked;
                 break;
         }
@@ -283,7 +279,11 @@ uint8_t mem_read_byte(uint32_t address) {
     uint32_t ramAddress;
 
     address &= 0xFFFFFF;
-
+#ifdef DEBUG_SUPPORT
+    if (!inDebugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
+        open_debugger(HIT_READ_BREAKPOINT, address);
+    }
+#endif
     switch((address >> 20) & 0xF) {
         /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
@@ -311,11 +311,6 @@ uint8_t mem_read_byte(uint32_t address) {
             value = port_read_byte(mmio_range(address)<<12 | addr_range(address));
             break;
     }
-#ifdef DEBUG_SUPPORT
-    if (!inDebugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
-        open_debugger(HIT_READ_BREAKPOINT, address);
-    }
-#endif
     return value;
 }
 

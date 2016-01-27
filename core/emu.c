@@ -44,8 +44,7 @@ bool emu_start(void) {
 
     if (rom_image == NULL) {
         gui_console_printf("No ROM image specified.");
-    }
-    else {
+    } else {
         FILE *rom = fopen_utf8(rom_image, "rb");
         do {
             if (rom) {
@@ -74,6 +73,10 @@ bool emu_start(void) {
 
                 /* Read whole ROM. */
                 if (fread(asic.mem->flash.block, 1, lSize, rom) < (size_t)lSize) {
+                    break;
+                }
+
+                if (asic.mem->flash.block[0x7E] == 0xFE) {
                     break;
                 }
 
@@ -224,7 +227,9 @@ static void emu_main_loop(void) {
         }
         if (!cpu.halted && cpu_events & EVENT_DEBUG_STEP) {
             cpu_events &= ~EVENT_DEBUG_STEP;
+#ifdef DEBUG_SUPPORT
             open_debugger(DBG_STEP, 0);
+#endif
         }
         sched_process_pending_events();
         cpu_execute();  // execute instructions with available clock cycles

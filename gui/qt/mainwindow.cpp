@@ -46,25 +46,18 @@ static const constexpr int WindowStateVersion = 0;
 MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     // Setup the UI
     ui->setupUi(this);
+    ui->centralWidget->hide();
     ui->statusBar->addWidget(&statusLabel);
 
     // Register QtKeypadBridge for the virtual keyboard functionality
     this->installEventFilter(&qt_keypad_bridge);
-    detachedLCD.installEventFilter(&qt_keypad_bridge);
+    ui->lcdWidget->installEventFilter(&qt_keypad_bridge);
     // Same for all the tabs/docks (iterate over them instead of harcoding their names)
     for (const auto& tab : ui->tabWidget->children()[0]->children()) {
         tab->installEventFilter(&qt_keypad_bridge);
     }
 
     ui->keypadWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
-    ui->disassemblyView->setContextMenuPolicy(Qt::CustomContextMenu);
-
-    // View
-    detachedLCD.setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->actionDetached_LCD, &QAction::triggered, this, &MainWindow::popoutLCD);
-    connect(&detachedLCD, &LCDWidget::closed, this, &MainWindow::popoutLCD);
-    connect(&detachedLCD, &LCDWidget::lcdOpenRequested, this, &MainWindow::selectFiles);
-    connect(ui->lcdWidget, &LCDWidget::lcdOpenRequested, this, &MainWindow::selectFiles);
 
     // Emulator -> GUI
     connect(&emu, &EmuThread::consoleStr, this, &MainWindow::consoleStr);
@@ -94,7 +87,11 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(this, &MainWindow::setDebugStepOutMode, &emu, &EmuThread::setDebugStepOutMode);
     connect(ui->buttonGoto, &QPushButton::clicked, this, &MainWindow::gotoPressed);
     connect(ui->disassemblyView, &QWidget::customContextMenuRequested, this, &MainWindow::disasmContextMenu);
+    connect(ui->vatView, &QWidget::customContextMenuRequested, this, &MainWindow::vatContextMenu);
+    connect(ui->opView, &QWidget::customContextMenuRequested, this, &MainWindow::opContextMenu);
     connect(ui->portView, &QTableWidget::itemChanged, this, &MainWindow::changePortData);
+    connect(ui->checkCharging, &QCheckBox::toggled, this, &MainWindow::changeBatteryCharging);
+    connect(ui->sliderBattery, &QSlider::valueChanged, this, &MainWindow::changeBatteryStatus);
 
     // Debugger Options
     connect(ui->buttonAddEquateFile, &QPushButton::clicked, this, &MainWindow::addEquateFile);
@@ -129,6 +126,9 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     // Other GUI actions
     connect(ui->buttonRunSetup, &QPushButton::clicked, this, &MainWindow::runSetup);
+    connect(ui->scaleSlider, &QSlider::sliderMoved, this, &MainWindow::reprintScale);
+    connect(ui->scaleSlider, &QSlider::valueChanged, this, &MainWindow::changeScale);
+    connect(ui->checkSkin, &QCheckBox::stateChanged, this, &MainWindow::toggleSkin);
     connect(ui->refreshSlider, &QSlider::valueChanged, this, &MainWindow::changeLCDRefresh);
     connect(ui->checkAlwaysOnTop, &QCheckBox::stateChanged, this, &MainWindow::alwaysOnTop);
     connect(ui->emulationSpeed, &QSlider::valueChanged, this, &MainWindow::changeEmulatedSpeed);
@@ -136,6 +136,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(this, &MainWindow::changedEmuSpeed, &emu, &EmuThread::changeEmuSpeed);
     connect(this, &MainWindow::changedThrottleMode, &emu, &EmuThread::changeThrottleMode);
     connect(&emu, &EmuThread::actualSpeedChanged, this, &MainWindow::showActualSpeed, Qt::QueuedConnection);
+    connect(ui->lcdWidget, &QWidget::customContextMenuRequested, this, &MainWindow::screenContextMenu);
 
     // Hex Editor
     connect(ui->buttonFlashGoto, &QPushButton::clicked, this, &MainWindow::flashGotoPressed);
@@ -184,8 +185,10 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     restoreGeometry(settings->value(QStringLiteral("windowGeometry")).toByteArray());
     restoreState(settings->value(QStringLiteral("windowState")).toByteArray(), WindowStateVersion);
     changeFrameskip(settings->value(QStringLiteral("frameskip"), 3).toUInt());
+    changeScale(settings->value(QStringLiteral("scale"), 100).toUInt());
+    toggleSkin(settings->value(QStringLiteral("skin"), 1).toBool());
     changeLCDRefresh(settings->value(QStringLiteral("refreshRate"), 60).toUInt());
-    changeEmulatedSpeed(settings->value(QStringLiteral("emuRate"), 100).toUInt());
+    changeEmulatedSpeed(settings->value(QStringLiteral("emuRate"), 10).toUInt());
     alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
     setFont(settings->value(QStringLiteral("textSize"), 9).toUInt());
     autoCheckForUpdates(settings->value(QStringLiteral("autoUpdate"), false).toBool());
@@ -212,6 +215,8 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     ui->rompathView->setText(QString::fromStdString(emu.rom));
     ui->emuVarView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->vatView->cursorState(true);
+    ui->opView->cursorState(true);
 }
 
 MainWindow::~MainWindow() {
@@ -281,7 +286,6 @@ void MainWindow::closeEvent(QCloseEvent *e) {
         qDebug("Failed.");
     }
 
-    detachedLCD.close();
     QMainWindow::closeEvent(e);
 }
 
@@ -301,16 +305,6 @@ void MainWindow::showActualSpeed(int speed) {
 
 void MainWindow::showStatusMsg(QString str) {
     statusLabel.setText(str);
-}
-
-void MainWindow::popoutLCD() {
-    detachedState = !detachedState;
-    if (detachedState) {
-        detachedLCD.show();
-    } else {
-        detachedLCD.hide();
-    }
-    ui->actionDetached_LCD->setChecked(detachedState);
 }
 
 bool MainWindow::runSetup() {
@@ -552,6 +546,52 @@ void MainWindow::showAbout() {
     #undef STRINGIFYMAGIC
 }
 
+void MainWindow::screenContextMenu(const QPoint &posa) {
+    QMenu contextMenu;
+    QPoint globalPos = ui->lcdWidget->mapToGlobal(posa);
+    QList<QMenu*> list = ui->menubar->findChildren<QMenu*>();
+    for (int i=0; i<list.size(); i++) {
+        contextMenu.addMenu(list.at(i));
+    }
+    contextMenu.exec(globalPos);
+}
+
+void MainWindow::adjustScreen() {
+    float scale = ui->scaleSlider->value() / 100.0;
+    bool skin = ui->checkSkin->isChecked();
+    ui->calcSkinTop->setVisible(skin);
+    float w, h;
+    w = 320 * scale;
+    h = 240 * scale;
+    ui->lcdWidget->setFixedSize(w, h);
+    ui->lcdWidget->move(skin ? 60 * scale : 0, skin ? 78 * scale : 0);
+    if (skin) {
+        w = 440 * scale;
+        h = 351 * scale;
+    }
+    ui->calcSkinTop->resize(w, h);
+    ui->screenWidgetContents->setFixedSize(w, h);
+}
+
+int MainWindow::reprintScale(int scale) {
+    int roundedScale = round(scale / 50.0) * 50;
+    ui->scaleLabel->setText(QString::number(roundedScale) + "%");
+    return roundedScale;
+}
+
+void MainWindow::changeScale(int scale) {
+    int roundedScale = reprintScale(scale);
+    settings->setValue(QStringLiteral("scale"), roundedScale);
+    ui->scaleSlider->setValue(roundedScale);
+    adjustScreen();
+}
+
+void MainWindow::toggleSkin(bool enable) {
+    settings->setValue(QStringLiteral("skin"), enable);
+    ui->checkSkin->setChecked(enable);
+    adjustScreen();
+}
+
 void MainWindow::changeLCDRefresh(int value) {
     settings->setValue(QStringLiteral("refreshRate"), value);
     ui->refreshLabel->setText(QString::number(value)+" FPS");
@@ -725,6 +765,8 @@ void MainWindow::setFont(int fontSize) {
 
     monospace.setPointSize(fontSize);
     ui->console->setFont(monospace);
+    ui->opView->setFont(monospace);
+    ui->vatView->setFont(monospace);
     ui->disassemblyView->setFont(monospace);
 
     ui->portRequest->setFont(monospace);
@@ -815,9 +857,6 @@ void MainWindow::updateDebuggerChanges() {
       cpu.IEF1 = ui->checkIEF1->isChecked();
       cpu.IEF2 = ui->checkIEF2->isChecked();
 
-      control.batteryCharging = ui->checkCharging->isChecked();
-      control.setBatteryStatus = static_cast<uint8_t>(ui->sliderBattery->value());
-
       cpu_flush(static_cast<uint32_t>(hex2int(ui->pcregView->text())), ui->checkADL->isChecked());
 
       backlight.brightness = static_cast<uint8_t>(ui->brightnessSlider->value());
@@ -882,6 +921,8 @@ void MainWindow::setDebuggerState(bool state) {
         pix.load(":/icons/resources/icons/stop.png");
         ui->portChangeView->clear();
         ui->breakChangeView->clear();
+        ui->opView->clear();
+        ui->vatView->clear();
     }
     setReceiveState(false);
     icon.addPixmap(pix);
@@ -1014,8 +1055,8 @@ void MainWindow::populateDebugWindow() {
     ui->freqView->setPalette(tmp == ui->freqView->text() ? nocolorback : colorback);
     ui->freqView->setText(tmp);
 
-    ui->checkCharging->setChecked(control.batteryCharging);
-    ui->sliderBattery->setValue(control.setBatteryStatus);
+    changeBatteryCharging(control.batteryCharging);
+    changeBatteryStatus(control.setBatteryStatus);
 
     switch((lcd.control>>1)&7) {
         case 0:
@@ -1067,10 +1108,59 @@ void MainWindow::populateDebugWindow() {
         updatePortData(i);
     }
 
+    updateTIOSView();
     updateStackView();
     ramUpdate();
     flashUpdate();
     memUpdate();
+}
+
+void MainWindow::updateTIOSView() {
+    calc_var_t var;
+    QString formattedLine;
+    QString calcData,calcData2;
+    QString opType;
+    uint8_t gotData[11];
+    uint8_t index;
+
+    ui->opView->clear();
+    ui->vatView->clear();
+
+    for(uint32_t i = 0xD005F8; i<0xD005F8+11*6; i+=11) {
+        calcData.clear();
+        opType.clear();
+        index = 0;
+        for(uint32_t j = i; j < i+11; j++) {
+            gotData[index] = debug_read_byte(j);
+            calcData += int2hex(gotData[index], 2)+" ";
+            index++;
+        }
+        if (*gotData < 0x40) {
+            opType = QString(calc_var_type_names[*gotData]);
+        }
+
+        formattedLine = QString("<pre><b><font color='#444'>%1</font></b><font color='darkblue'>    %2    </font>%3 <font color='green'>%4</font></pre>")
+                                       .arg(int2hex(i, 6), "OP"+QString::number(((i-0xD005F8)/11)+1), calcData, opType);
+
+        ui->opView->appendHtml(formattedLine);
+    }
+
+    vat_search_init(&var);
+    while (vat_search_next(&var)) {
+        uint8_t j;
+        calcData.clear();
+        calcData2.clear();
+        for(j = 0; j < var.namelen; j++) {
+            calcData += int2hex(var.name[j], 2)+" ";
+        }
+        for(; j < 8; j++) {
+            calcData2 += "00 ";
+        }
+        formattedLine = QString("<pre><b><font color='#444'>%1</font></b>  <font color='darkblue'>%2</font>  <font color='green'>%3</font>  %4<font color='gray'>%5</font><font color='green'> %6</font></pre>")
+                                        .arg(int2hex(var.dataPtr,6), int2hex(var.vatPtr,6), int2hex(var.size,4), calcData, calcData2, calc_var_type_names[var.type]);
+        ui->vatView->appendHtml(formattedLine);
+    }
+    ui->vatView->moveCursor(QTextCursor::Start);
 }
 
 void MainWindow::updateDisasmView(const int sentBase, const bool newPane) {
@@ -1408,11 +1498,8 @@ void MainWindow::drawNextDisassembleLine() {
         disassembleInstruction();
     }
 
-    // Watch out, maintainers: the (unformatted) line is later "parsed" in DisasmWidget::getSelectedAddress()
-    // with a cursor getting the address from it. Make sure the start position is correct.
-
     // Some round symbol things
-    QString breakpointSymbols = QString("<font color='#A3FFA3'><big>%1</big></font><font color='#A3A3FF'><big>%2</big></font><font color='#FFA3A3'><big>%3</big></font>")
+    QString breakpointSymbols = QString("<font color='#A3FFA3'><big>%1</font><font color='#A3A3FF'>%2</font><font color='#FFA3A3'>%3</big></font>")
                                    .arg(((disasmHighlight.hit_read_breakpoint == true)  ? "&#9679;" : " "),
                                         ((disasmHighlight.hit_write_breakpoint == true) ? "&#9679;" : " "),
                                         ((disasmHighlight.hit_exec_breakpoint == true)  ? "&#9679;" : " "));
@@ -1423,9 +1510,9 @@ void MainWindow::drawNextDisassembleLine() {
                                         .replace(QRegularExpression("(^\\d)"), "<font color='blue'>\\1</font>")             // dec number
                                         .replace(QRegularExpression("([()])"), "<font color='#600'>\\1</font>");            // parentheses
 
-    QString formattedLine = QString("<pre><b>%1<font color='#444'>%2</font></b>    %3  <font color='darkblue'>%4%5</font>%6</pre>")
-                               .arg(breakpointSymbols,
-                                    int2hex(disasm.base_address, 6),
+    QString formattedLine = QString("<pre><b><font color='#444'>%1</font></b> %2 %3  <font color='darkblue'>%4%5</font>%6</pre>")
+                               .arg(int2hex(disasm.base_address, 6),
+                                    breakpointSymbols,
                                     label ? QString::fromStdString(*label) + ":" : ui->checkDataCol->isChecked() ? QString::fromStdString(disasm.instruction.data).leftJustified(12, ' ') : "",
                                     QString::fromStdString(disasm.instruction.opcode),
                                     QString::fromStdString(disasm.instruction.mode_suffix),
@@ -1455,6 +1542,7 @@ void MainWindow::disasmContextMenu(const QPoint& posa) {
     QString set_pc = "Set PC to this address";
     QString run_until = "Toggle Run Until this address";
     QString toggle_break = "Toggle Breakpoint at this address";
+    QString goto_mem = "Goto Memory View";
     ui->disassemblyView->setTextCursor(ui->disassemblyView->cursorForPosition(posa));
     QPoint globalPos = ui->disassemblyView->mapToGlobal(posa);
 
@@ -1462,6 +1550,7 @@ void MainWindow::disasmContextMenu(const QPoint& posa) {
     contextMenu.addAction(set_pc);
     contextMenu.addAction(toggle_break);
     contextMenu.addAction(run_until);
+    contextMenu.addAction(goto_mem);
 
     QAction* selectedItem = contextMenu.exec(globalPos);
     if (selectedItem) {
@@ -1476,6 +1565,40 @@ void MainWindow::disasmContextMenu(const QPoint& posa) {
             uint32_t address = static_cast<uint32_t>(hex2int(ui->disassemblyView->getSelectedAddress()));
             debug_toggle_run_until(address);
             updateDisasmView(address, true);
+        } else if (selectedItem->text() == goto_mem) {
+            memGoto(ui->disassemblyView->getSelectedAddress());
+        }
+    }
+}
+
+void MainWindow::vatContextMenu(const QPoint& posa) {
+    QString goto_mem = "Goto Memory View";
+    ui->vatView->setTextCursor(ui->vatView->cursorForPosition(posa));
+    QPoint globalPos = ui->vatView->mapToGlobal(posa);
+
+    QMenu contextMenu;
+    contextMenu.addAction(goto_mem);
+
+    QAction* selectedItem = contextMenu.exec(globalPos);
+    if (selectedItem) {
+        if (selectedItem->text() == goto_mem) {
+            memGoto(ui->vatView->getSelectedAddress());
+        }
+    }
+}
+
+void MainWindow::opContextMenu(const QPoint& posa) {
+    QString goto_mem = "Goto Memory View";
+    ui->opView->setTextCursor(ui->opView->cursorForPosition(posa));
+    QPoint globalPos = ui->opView->mapToGlobal(posa);
+
+    QMenu contextMenu;
+    contextMenu.addAction(goto_mem);
+
+    QAction* selectedItem = contextMenu.exec(globalPos);
+    if (selectedItem) {
+        if (selectedItem->text() == goto_mem) {
+            memGoto(ui->opView->getSelectedAddress());
         }
     }
 }
@@ -1529,6 +1652,17 @@ void MainWindow::gotoPressed() {
     }
 
     updateDisasmView(hex2int(address), false);
+}
+
+// TODO: force the OS to detect updates to battery charging/status immediately?
+void MainWindow::changeBatteryCharging(bool checked) {
+    control.batteryCharging = checked;
+}
+
+void MainWindow::changeBatteryStatus(int value) {
+    control.setBatteryStatus = static_cast<uint8_t>(value);
+    ui->sliderBattery->setValue(value);
+    ui->labelBattery->setText(QString::number(value * 20) + "%");
 }
 
 /* ================================================ */
@@ -1648,14 +1782,8 @@ void MainWindow::memSearchPressed() {
     searchEdit(ui->memEdit);
 }
 
-void MainWindow::memGotoPressed() {
-    bool ok;
-    QString address = getAddressString(ok, "");
-
+void MainWindow::memGoto(QString address) {
     ui->memEdit->setFocus();
-    if (!ok) {
-        return;
-    }
     int int_address = hex2int(address);
     if (int_address > 0xFFFFFF || int_address < 0) {
         return;
@@ -1677,6 +1805,16 @@ void MainWindow::memGotoPressed() {
     ui->memEdit->setAddressOffset(start);
     ui->memEdit->setCursorPosition((int_address-start)<<1);
     ui->memEdit->ensureVisible();
+}
+
+void MainWindow::memGotoPressed() {
+    bool ok;
+    QString address = getAddressString(ok, "");
+
+    if (!ok) {
+        return;
+    }
+    memGoto(address);
 }
 
 void MainWindow::syncHexView(int posa, QHexEdit *hex_view) {

@@ -67,6 +67,8 @@ private:
     void checkForUpdates(bool);
     void showAbout(void);
     void setUIMode(bool);
+    void changeBatteryCharging(bool);
+    void changeBatteryStatus(int);
 
     // Debugger
     void raiseDebugger();
@@ -86,14 +88,18 @@ private:
     void stepPressed();
     void stepOverPressed();
     void stepOutPressed();
+    void updateTIOSView();
     void updateStackView();
     void updateDisasmView(const int, const bool);
     void gotoPressed();
     void setBreakpointAddress();
     void disasmContextMenu(const QPoint &);
+    void vatContextMenu(const QPoint &);
+    void opContextMenu(const QPoint &);
     bool addBreakpoint();
 
     // Others
+    void screenContextMenu(const QPoint &);
     void resetCalculator();
     void addEquateFile();
     void clearEquateFile();
@@ -108,10 +114,13 @@ private:
     void showStatusMsg(QString);
 
     // Settings
+    void adjustScreen();
+    int reprintScale(int);
+    void changeScale(int);
+    void toggleSkin(bool);
     void changeLCDRefresh(int);
     void alwaysOnTop(int);
     void autoCheckForUpdates(int);
-    void popoutLCD();
 
     // Linking
     QStringList showVariableFileDialog(QFileDialog::AcceptMode mode);
@@ -130,6 +139,7 @@ private:
     void ramSearchPressed();
     void ramSyncPressed();
     void memUpdate();
+    void memGoto(QString address);
     void memGotoPressed();
     void memSearchPressed();
     void memSyncPressed();
@@ -149,7 +159,6 @@ private:
     QSettings *settings = nullptr;
     QDockWidget *debuggerDock = nullptr;
     QTextCursor disasmOffset;
-    bool detachedState = false;
     bool disasmOffsetSet;
     bool fromPane;
     int addressPane;
@@ -157,7 +166,6 @@ private:
 
     QDir currentDir;
     EmuThread emu;
-    LCDWidget detachedLCD;
 
     bool debuggerOn = false;
     bool inReceivingMode = false;
