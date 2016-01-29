@@ -4,6 +4,7 @@
 #include "emu.h"
 #include "cpu.h"
 #include "flash.h"
+#include "control.h"
 
 /* Global MEMORY state */
 mem_state_t mem;
@@ -280,7 +281,7 @@ uint8_t mem_read_byte(uint32_t address) {
 
     address &= 0xFFFFFF;
 #ifdef DEBUG_SUPPORT
-    if (!inDebugger && debugger.data.block[address] & DBG_READ_BREAKPOINT) {
+    if (debugger.data.block[address] & DBG_READ_BREAKPOINT) {
         open_debugger(HIT_READ_BREAKPOINT, address);
     }
 #endif
@@ -322,7 +323,9 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
         /* FLASH */
         case 0x0: case 0x1: case 0x2: case 0x3:
         case 0x4: case 0x5: case 0x6: case 0x7:
-            if (!mem.flash.locked) {
+            if (mem.flash.locked && cpu.registers.PC >= control.privileged) {
+                cpu_nmi();
+            } else {
                 flash_write_handler(address, byte);
             }
             break;
@@ -348,7 +351,7 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
             break;
     }
 #ifdef DEBUG_SUPPORT
-    if (!inDebugger && debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
+    if (debugger.data.block[address] & DBG_WRITE_BREAKPOINT) {
         open_debugger(HIT_WRITE_BREAKPOINT, address);
     }
 #endif

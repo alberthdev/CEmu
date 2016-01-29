@@ -53,7 +53,7 @@ static void cpu_prefetch(uint32_t address, bool mode) {
 static uint8_t cpu_fetch_byte(void) {
     uint8_t value;
 #ifdef DEBUG_SUPPORT
-    if (!inDebugger && (debugger.data.block[cpu.registers.PC] & (DBG_EXEC_BREAKPOINT | DBG_STEP_OVER_BREAKPOINT | DBG_RUN_UNTIL_BREAKPOINT))) {
+    if (debugger.data.block[cpu.registers.PC] & (DBG_EXEC_BREAKPOINT | DBG_STEP_OVER_BREAKPOINT | DBG_RUN_UNTIL_BREAKPOINT)) {
         open_debugger((debugger.data.block[cpu.registers.PC] & DBG_EXEC_BREAKPOINT) ? HIT_EXEC_BREAKPOINT : DBG_STEP, cpu.registers.PC);
     }
 #endif
@@ -380,6 +380,11 @@ static void cpu_call(uint32_t address, uint8_t mixed) {
     cpu_prefetch(address, cpu.IL);
 }
 
+static void cpu_trap(void) {
+    cpu_get_cntrl_data_blocks_format();
+    cpu_call(0x00, cpu.MADL);
+}
+
 static void cpu_return(void) {
     eZ80registers_t *r = &cpu.registers;
     uint32_t address;
@@ -504,7 +509,7 @@ static void cpu_execute_rot(int y, int z, uint32_t address, uint8_t value) {
             new_c = old_0;
             break;
         case 6: // OPCODETRAP
-            cpu.IEF_wait = 1;
+            cpu_trap();
             return;
         case 7: // SRL value[z]
             value >>= 1;
@@ -983,6 +988,11 @@ void cpu_flush(uint32_t address, bool mode) {
     cpu_get_cntrl_data_blocks_format();
 }
 
+void cpu_nmi(void) {
+    cpu.NMI = 1;
+    cpu.next = cpu.cycles;
+}
+
 void cpu_execute(void) {
     // variable declaration
     int8_t s;
@@ -1020,10 +1030,14 @@ void cpu_execute(void) {
             cpu.IEF1 = cpu.IEF2 = 1;
             cpu.next = save_next;
         }
-        if (cpu.IEF1 && (intrpt.request->status & intrpt.request->enabled)) {
+        if (cpu.NMI || (cpu.IEF1 && (intrpt.request->status & intrpt.request->enabled))) {
             cpu.IEF1 = cpu.IEF2 = cpu.halted = 0;
             cpu.cycles += 1;
-            if (cpu.IM != 3) {
+            if (cpu.NMI) {
+                cpu.NMI = 0;
+                cpu_call(0x66, cpu.MADL);
+                cpu.next = save_next;
+            } else if (cpu.IM != 3) {
                 cpu_call(0x38, cpu.MADL);
             } else {
                 cpu.cycles += 1;
@@ -1351,7 +1365,7 @@ void cpu_execute(void) {
                                                     switch (context.z) {
                                                         case 0:
                                                             if (context.y == 6) { // OPCODETRAP
-                                                                cpu.IEF_wait = 1;
+                                                                cpu_trap();
                                                             } else { // IN0 r[y], (n)
                                                                 cpu_write_reg(context.y, new = cpu_read_in(cpu_fetch_byte()));
                                                                 r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
@@ -1369,7 +1383,7 @@ void cpu_execute(void) {
                                                         case 2: // LEA rp3[p], IX
                                                         case 3: // LEA rp3[p], IY
                                                             if (context.q) { // OPCODETRAP
-                                                                cpu.IEF_wait = 1;
+                                                                cpu_trap();
                                                             } else {
                                                                 cpu.PREFIX = context.z;
                                                                 cpu_write_rp3(context.p, cpu_index_address());
@@ -1387,7 +1401,7 @@ void cpu_execute(void) {
                                                                 break;
                                                             }
                                                         case 5: // OPCODETRAP
-                                                            cpu.IEF_wait = 1;
+                                                            cpu_trap();
                                                             break;
                                                         case 7:
                                                             cpu.PREFIX = 2;
@@ -1403,7 +1417,7 @@ void cpu_execute(void) {
                                                     switch (context.z) {
                                                         case 0:
                                                             if (context.y == 6) { // OPCODETRAP (ADL)
-                                                                cpu.IEF_wait = 1;
+                                                                cpu_trap();
                                                             } else { // IN r[y], (BC)
                                                                 cpu_write_reg(context.y, new = cpu_read_in(r->BC));
                                                                 r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
@@ -1413,7 +1427,7 @@ void cpu_execute(void) {
                                                             break;
                                                         case 1:
                                                             if (context.y == 6) { // OPCODETRAP (ADL)
-                                                                cpu.IEF_wait = 1;
+                                                                cpu_trap();
                                                             } else { // OUT (BC), r[y]
                                                                 cpu_write_out(r->BC, cpu_read_reg(context.y));
                                                             }
@@ -1493,7 +1507,7 @@ void cpu_execute(void) {
                                                                     break;
                                                                 case 3:
                                                                 case 6: // OPCODETRAP
-                                                                    cpu.IEF_wait = 1;
+                                                                    cpu_trap();
                                                                     break;
                                                                 case 4: // PEA IX + d
                                                                     cpu_push_word((int32_t)r->IX + cpu_fetch_offset());
@@ -1516,7 +1530,7 @@ void cpu_execute(void) {
                                                                     cpu.IM = context.y;
                                                                     break;
                                                                 case 1: // OPCODETRAP
-                                                                    cpu.IEF_wait = 1;
+                                                                    cpu_trap();
                                                                     break;
                                                                 case 4: // PEA IY + d
                                                                     cpu_push_word((int32_t)r->IY + cpu_fetch_offset());
@@ -1574,17 +1588,17 @@ void cpu_execute(void) {
                                                                         | cpuflag_parity(r->A) | cpuflag_undef(r->F);
                                                                     break;
                                                                 default: // OPCODETRAP
-                                                                    cpu.IEF_wait = 1;
+                                                                    cpu_trap();
                                                                     break;
                                                             }
                                                             break;
                                                     }
                                                     break;
                                                 case 2:
-                                                    if (context.y >= 0 && context.z <= 4) { // bli[y,z]
+                                                    if (context.z <= 4) { // bli[y,z]
                                                         cpu_execute_bli(context.y, context.z);
                                                     } else { // OPCODETRAP
-                                                        cpu.IEF_wait = 1;
+                                                        cpu_trap();
                                                     }
                                                     break;
                                                 case 3:  // There are only a few of these, so a simple switch for these shouldn't matter too much
@@ -1643,12 +1657,12 @@ void cpu_execute(void) {
                                                             memset(mem.flash.block + (r->HL & ~0x3FFF), 0xFF, 0x4000);
                                                             break;
                                                         default:   // OPCODETRAP
-                                                            cpu.IEF_wait = 1;
+                                                            cpu_trap();
                                                             break;
                                                     }
                                                     break;
                                                 default: // OPCODETRAP
-                                                    cpu.IEF_wait = 1;
+                                                    cpu_trap();
                                                     break;
                                             }
                                             break;
