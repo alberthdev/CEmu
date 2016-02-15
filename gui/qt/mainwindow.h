@@ -38,18 +38,22 @@ public slots:
 
     // Console
     void consoleStr(QString);
+    void consoleChar(const char c);
 
 signals:
     // Debugging
     void debuggerChangedState(bool);
     void triggerEmuSendState();
+    void debugInputRequested();
+    void debuggerCommand(QString);
 
     // Linking
     void setSendState(bool);
     void sendVariable(std::string);
     void setReceiveState(bool);
-    void setDebugStepMode();
+    void setDebugStepInMode();
     void setDebugStepOverMode();
+    void setDebugStepNextMode();
     void setDebugStepOutMode();
 
     // Speed
@@ -61,6 +65,7 @@ private:
     bool runSetup(void);
     void screenshot(void);
     void screenshotGIF(void);
+    void saveScreenshot(QString,QString,QString);
     void recordGIF(void);
     void changeFrameskip(int);
     void changeFramerate(void);
@@ -71,11 +76,13 @@ private:
     void changeBatteryStatus(int);
 
     // Debugger
+    void debugCommand();
     void raiseDebugger();
     void updateDebuggerChanges();
     void populateDebugWindow();
     void setDebuggerState(bool);
     void changeDebuggerState();
+    void executeDebugCommand(uint32_t, uint8_t);
     void processDebugCommand(int, uint32_t);
     void portMonitorCheckboxToggled(QTableWidgetItem *);
     void addPort();
@@ -85,8 +92,9 @@ private:
     void deleteBreakpoint();
     void breakpointCheckboxToggled(QTableWidgetItem *);
     void drawNextDisassembleLine();
-    void stepPressed();
+    void stepInPressed();
     void stepOverPressed();
+    void stepNextPressed();
     void stepOutPressed();
     void updateTIOSView();
     void updateStackView();
@@ -112,17 +120,17 @@ private:
     void showActualSpeed(int);
 
     // Console
-    void clearConsole(void);
     void showStatusMsg(QString);
+    void consoleOutputChanged();
 
     // Settings
     void adjustScreen();
-    int reprintScale(int);
     void changeScale(int);
     void toggleSkin(bool);
     void changeLCDRefresh(int);
     void alwaysOnTop(int);
     void autoCheckForUpdates(int);
+    int reprintScale(int);
 
     // Linking
     QStringList showVariableFileDialog(QFileDialog::AcceptMode mode);
@@ -172,6 +180,7 @@ private:
 
     bool debuggerOn = false;
     bool inReceivingMode = false;
+    bool stderrConsole = false;
 
     QList<calc_var_t> vars;
 };

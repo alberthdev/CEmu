@@ -32,6 +32,7 @@
 #include "../../core/debug/disasm.h"
 
 EmuThread *emu_thread = nullptr;
+volatile bool waitForLink;
 
 void gui_emu_sleep(void) {
     QThread::usleep(50);
@@ -56,6 +57,10 @@ void gui_console_printf(const char *fmt, ...) {
     va_end(ap);
 }
 
+void gui_console_debug_char(const char c) {
+    emu_thread->consoleChar(c);
+}
+
 void gui_debugger_send_command(int reason, uint32_t addr) {
     emu_thread->sendDebugCommand(reason, addr);
 }
@@ -66,8 +71,21 @@ void gui_debugger_entered_or_left(bool entered) {
     }
 }
 
+static debug_input_cb debugCallback;
+
+void gui_debugger_request_input(debug_input_cb callback) {
+    debugCallback = callback;
+    emu_thread->debugInputRequested(callback != nullptr);
+}
+
 void throttle_timer_wait(void) {
     emu_thread->throttleTimerWait();
+}
+
+void gui_entered_send_state(bool entered) {
+    if(entered) {
+        waitForLink = false;
+    }
 }
 
 EmuThread::EmuThread(QObject *p) : QThread(p) {
@@ -77,6 +95,12 @@ EmuThread::EmuThread(QObject *p) : QThread(p) {
     speed = actualSpeed = 100;
     lastTime= std::chrono::steady_clock::now();
 }
+
+void EmuThread::debuggerInput(QString str) {
+    debugInput = str.toStdString();
+    debugCallback(debugInput.c_str());
+}
+
 
 void EmuThread::changeEmuSpeed(int value) {
     speed = value;
@@ -103,13 +127,21 @@ void EmuThread::setReceiveState(bool state) {
     emu_is_recieving = state;
 }
 
-void EmuThread::setDebugStepMode() {
+void EmuThread::setDebugStepInMode() {
     cpu_events |= EVENT_DEBUG_STEP;
     enterDebugger = false;
     inDebugger = false;
 }
 
 void EmuThread::setDebugStepOverMode() {
+    debugger.stepOutSPL = cpu.registers.SPL;
+    debugger.stepOutSPS = cpu.registers.SPS;
+    cpu_events |= EVENT_DEBUG_STEP_OUT;
+    enterDebugger = false;
+    inDebugger = false;
+}
+
+void EmuThread::setDebugStepNextMode() {
     disasm.base_address = cpu.registers.PC;
     disasm.adl = cpu.ADL;
     disassembleInstruction();
@@ -121,8 +153,8 @@ void EmuThread::setDebugStepOverMode() {
 }
 
 void EmuThread::setDebugStepOutMode() {
-    debugger.stepOutSPL = cpu.registers.SPL;
-    debugger.stepOutSPS = cpu.registers.SPS;
+    debugger.stepOutSPL = cpu.registers.SPL + 1;
+    debugger.stepOutSPS = cpu.registers.SPS + 1;
     cpu_events |= EVENT_DEBUG_STEP_OUT;
     enterDebugger = false;
     inDebugger = false;

@@ -107,13 +107,13 @@ static void cpu_write_word(uint32_t address, uint32_t value) {
 }
 
 static uint8_t cpu_pop_byte_mode(bool mode) {
-    return cpu_read_byte(cpu_address_mode(cpu.registers.stack[mode].hl++, mode));
+    return mem_read_byte(cpu_address_mode(cpu.registers.stack[mode].hl++, mode));
 }
 static uint8_t cpu_pop_byte(void) {
     return cpu_pop_byte_mode(cpu.L);
 }
 static void cpu_push_byte_mode(uint8_t value, bool mode) {
-    cpu_write_byte(cpu_address_mode(--cpu.registers.stack[mode].hl, mode), value);
+    mem_write_byte(cpu_address_mode(--cpu.registers.stack[mode].hl, mode), value);
 }
 static void cpu_push_byte(uint8_t value) {
     cpu_push_byte_mode(value, cpu.L);
@@ -386,7 +386,6 @@ static void cpu_trap(void) {
 }
 
 static void cpu_return(void) {
-    eZ80registers_t *r = &cpu.registers;
     uint32_t address;
     bool mode = cpu.ADL;
     cpu.cycles++;
@@ -402,7 +401,9 @@ static void cpu_return(void) {
     }
     cpu_prefetch(address, mode);
 #ifdef DEBUG_SUPPORT
-    if (cpu_events & EVENT_DEBUG_STEP_OUT && (r->SPL > debugger.stepOutSPL || r->SPS > debugger.stepOutSPS)) {
+    if (cpu_events & EVENT_DEBUG_STEP_OUT &&
+        (cpu.registers.SPL >= debugger.stepOutSPL ||
+         cpu.registers.SPS >= debugger.stepOutSPS)) {
         cpu_events &= ~EVENT_DEBUG_STEP_OUT;
         open_debugger(DBG_STEP, 0);
     }
@@ -742,18 +743,16 @@ static void cpu_execute_bli(int y, int z) {
                     r->HL = cpu_mask_mode((int32_t)r->HL + 1, cpu.L);
                     cpu_write_byte(r->DE, old);
                     r->DE = cpu_mask_mode((int32_t)r->DE + 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
-                    new = r->A + old;
-                    r->flags.PV = r->BC != 0;
+                    r->flags.PV = cpu_dec_bc_partial_mode() != 0; // Do not mask BC
                     r->flags.N = 0;
                     break;
                 case 1: // CPI
                     old = cpu_read_byte(r->HL);
                     r->HL = cpu_mask_mode((int32_t)r->HL + 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
                     new = r->A - old;
                     r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
-                        | cpuflag_halfcarry_b_sub(r->A, old, 0) | cpuflag_pv(r->BC)
+                        | cpuflag_halfcarry_b_sub(r->A, old, 0)
+                        | cpuflag_pv(cpu_dec_bc_partial_mode()) // Do not mask BC
                         | cpuflag_subtract(1) | cpuflag_c(r->flags.C)
                         | cpuflag_undef(r->F);
                     break;
@@ -792,19 +791,16 @@ static void cpu_execute_bli(int y, int z) {
                     r->HL = cpu_mask_mode((int32_t)r->HL - 1, cpu.L);
                     cpu_write_byte(r->DE, old);
                     r->DE = cpu_mask_mode((int32_t)r->DE - 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
-                    new = r->A + old;
-                    r->flags.PV = r->BC != 0;
+                    r->flags.PV = cpu_dec_bc_partial_mode() != 0; // Do not mask BC
                     r->flags.N = 0;
                     break;
                 case 1: // CPD
                     old = cpu_read_byte(r->HL);
                     r->HL = cpu_mask_mode((int32_t)r->HL - 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
                     new = r->A - old;
                     r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
                         | cpuflag_halfcarry_b_sub(r->A, old, 0)
-                        | cpuflag_pv(r->BC)
+                        | cpuflag_pv(cpu_dec_bc_partial_mode()) // Do not mask BC
                         | cpuflag_subtract(1) | cpuflag_c(r->flags.C)
                         | cpuflag_undef(r->F);
                     break;
@@ -843,9 +839,7 @@ static void cpu_execute_bli(int y, int z) {
                     cpu_write_byte(r->DE, old);
                     r->HL = cpu_mask_mode((int32_t)r->HL + 1, cpu.L);
                     r->DE = cpu_mask_mode((int32_t)r->DE + 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
-                    new = r->A + old;
-                    r->flags.PV = r->BC != 0;
+                    r->flags.PV = cpu_dec_bc_partial_mode() != 0; // Do not mask BC
                     r->flags.N = 0;
                     if (r->BC) {
                         cpu_prefetch(r->PC - 2 - cpu.SUFFIX, cpu.ADL);
@@ -855,10 +849,10 @@ static void cpu_execute_bli(int y, int z) {
                     cpu.cycles++;
                     old = cpu_read_byte(r->HL);
                     r->HL = cpu_mask_mode((int32_t)r->HL + 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
                     new = r->A - old;
                     r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
-                        | cpuflag_halfcarry_b_sub(r->A, old, 0) | cpuflag_pv(r->BC)
+                        | cpuflag_halfcarry_b_sub(r->A, old, 0)
+                        | cpuflag_pv(cpu_dec_bc_partial_mode()) // Do not mask BC
                         | cpuflag_subtract(1) | cpuflag_c(r->flags.C)
                         | cpuflag_undef(r->F);
                     if (r->BC && !r->flags.Z) {
@@ -910,9 +904,7 @@ static void cpu_execute_bli(int y, int z) {
                     r->HL = cpu_mask_mode((int32_t)r->HL - 1, cpu.L);
                     cpu_write_byte(r->DE, old);
                     r->DE = cpu_mask_mode((int32_t)r->DE - 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
-                    new = r->A + old;
-                    r->flags.PV = r->BC != 0;
+                    r->flags.PV = cpu_dec_bc_partial_mode() != 0; // Do not mask BC
                     r->flags.N = 0;
                     if (r->BC) {
                         cpu_prefetch(r->PC - 2 - cpu.SUFFIX, cpu.ADL);
@@ -922,10 +914,10 @@ static void cpu_execute_bli(int y, int z) {
                     cpu.cycles++;
                     old = cpu_read_byte(r->HL);
                     r->HL = cpu_mask_mode((int32_t)r->HL - 1, cpu.L);
-                    r->BC = cpu_mask_mode((int32_t)r->BC - 1, cpu.L);
                     new = r->A - old;
                     r->F = cpuflag_sign_b(new) | cpuflag_zero(new)
-                        | cpuflag_halfcarry_b_sub(r->A, old, 0) | cpuflag_pv(r->BC)
+                        | cpuflag_halfcarry_b_sub(r->A, old, 0)
+                        | cpuflag_pv(cpu_dec_bc_partial_mode()) // Do not mask BC
                         | cpuflag_subtract(1) | cpuflag_c(r->flags.C)
                         | cpuflag_undef(r->F);
                     if (r->BC && !r->flags.Z) {
@@ -974,7 +966,7 @@ static void cpu_execute_bli(int y, int z) {
 
 void cpu_init(void) {
     memset(&cpu, 0, sizeof cpu);
-    gui_console_printf("Initialized CPU...\n");
+    gui_console_printf("[CEmu] Initialized CPU...\n");
 }
 
 void cpu_reset(void) {
@@ -1041,11 +1033,13 @@ void cpu_execute(void) {
                 cpu_call(0x38, cpu.MADL);
             } else {
                 cpu.cycles += 1;
-                cpu_call(cpu_read_word(r->I << 8 | ~r->R), cpu.MADL);
+                cpu_call(cpu_read_word(r->I << 8 | r->R), cpu.MADL);
             }
+#ifdef DEBUG_SUPPORT
             if (cpu_events & EVENT_DEBUG_STEP) {
                 break;
             }
+#endif
         } else if (cpu.halted && cpu.cycles < cpu.next) {
             cpu.cycles = cpu.next; // consume all of the cycles
         }
@@ -1064,7 +1058,9 @@ void cpu_execute(void) {
                                 case 0:  // NOP
                                     break;
                                 case 1:  // EX af,af'
-                                    rswap(r->AF, r->_AF);
+                                    w = r->AF;
+                                    r->AF = r->_AF;
+                                    r->_AF = w;
                                     break;
                                 case 2: // DJNZ d
                                     s = cpu_fetch_offset();
@@ -1253,7 +1249,15 @@ void cpu_execute(void) {
                                             cpu_return();
                                             break;
                                         case 1: // EXX
-                                            exx(&cpu.registers);
+                                            w = r->BC;
+                                            r->BC = r->_BC;
+                                            r->_BC = w;
+                                            w = r->DE;
+                                            r->DE = r->_DE;
+                                            r->_DE = w;
+                                            w = r->HL;
+                                            r->HL = r->_HL;
+                                            r->_HL = w;
                                             break;
                                         case 2: // JP (rr)
                                             cpu_prefetch(cpu_read_index(), cpu.L);
@@ -1318,7 +1322,9 @@ void cpu_execute(void) {
                                     cpu_write_word(w, new_word);
                                     break;
                                 case 5: // EX DE, HL
-                                    rswap(r->HL, r->DE);
+                                    w = cpu_mask_mode(r->DE, cpu.L);
+                                    r->DE = cpu_mask_mode(r->HL, cpu.L);
+                                    r->HL = w;
                                     break;
                                 case 6: // DI
                                     cpu.IEF_wait = cpu.IEF1 = cpu.IEF2 = 0;

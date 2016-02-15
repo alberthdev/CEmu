@@ -9,12 +9,6 @@
 /* Global MEMORY state */
 mem_state_t mem;
 
-/* Standard equates */
-static const uint32_t ram_size = 0x65800;
-static const uint32_t flash_size = 0x400000;
-static const uint32_t flash_sector_size_8K = 0x2000;
-static const uint32_t flash_sector_size_64K = 0x10000;
-
 void mem_init(void) {
     unsigned int i;
 
@@ -40,7 +34,7 @@ void mem_init(void) {
 
     mem.flash.write_index = 0;
     mem.flash.command = NO_COMMAND;
-    gui_console_printf("Initialized memory...\n");
+    gui_console_printf("[CEmu] Initialized Memory...\n");
 }
 
 void mem_free(void) {
@@ -50,12 +44,12 @@ void mem_free(void) {
     if (mem.flash.block) {
         free(mem.flash.block);
     }
-    gui_console_printf("Freed memory...\n");
+    gui_console_printf("[CEmu] Freed Memory.\n");
 }
 
 void mem_reset(void) {
     memset(mem.ram.block, 0, ram_size);
-    gui_console_printf("RAM reset.\n");
+    gui_console_printf("[CEmu] RAM reset.\n");
 }
 
 static uint32_t flash_address(uint32_t address, uint32_t *size) {
@@ -133,6 +127,20 @@ static void flash_verify_sector_protection(uint32_t address, uint8_t byte) {
     mem.flash.command = FLASH_READ_SECTOR_PROTECTION;
 }
 
+static void flash_cfi_read(uint32_t address, uint8_t byte) {
+    (void)address;
+    (void)byte;
+
+    mem.flash.command = FLASH_READ_CFI;
+}
+
+static void flash_enter_deep_power_down(uint32_t address, uint8_t byte) {
+    (void)address;
+    (void)byte;
+
+    mem.flash.command = FLASH_DEEP_POWER_DOWN;
+}
+
 typedef const struct flash_write_pattern {
     const int length;
     const flash_write_t pattern[6];
@@ -180,6 +188,13 @@ static flash_write_pattern_t patterns[] = {
         .handler = flash_erase
     },
     {
+        .length = 1,
+        .pattern = {
+            { .address = 0xAA, .address_mask = 0xFFF, .value = 0x98, .value_mask = 0xFF },
+        },
+        .handler = flash_cfi_read
+    },
+    {
         .length = 3,
         .pattern = {
             { .address = 0xAAA, .address_mask = 0xFFF, .value = 0xAA, .value_mask = 0xFF },
@@ -187,6 +202,15 @@ static flash_write_pattern_t patterns[] = {
             { .address = 0xAAA, .address_mask = 0xFFF, .value = 0x90, .value_mask = 0xFF },
         },
         .handler = flash_verify_sector_protection
+    },
+    {
+        .length = 3,
+        .pattern = {
+            { .address = 0xAAA, .address_mask = 0xFFF, .value = 0xAA, .value_mask = 0xFF },
+            { .address = 0x555, .address_mask = 0xFFF, .value = 0x55, .value_mask = 0xFF },
+            { .address = 0x000, .address_mask = 0x000, .value = 0xB9, .value_mask = 0xFF },
+        },
+        .handler = flash_enter_deep_power_down
     },
     {
         .length = 0
@@ -226,6 +250,10 @@ static uint8_t flash_read_handler(uint32_t address) {
                 }
                 value = (uint8_t)mem.flash.sector[sector].locked;
                 break;
+            case FLASH_READ_CFI:
+                break;
+            case FLASH_DEEP_POWER_DOWN:
+                break;
         }
     }
 
@@ -246,7 +274,8 @@ static void flash_write_handler(uint32_t address, uint8_t byte) {
 
     /* See if we can reset to default */
     if (mem.flash.command != NO_COMMAND) {
-        if (byte == 0xF0) {
+        if ((mem.flash.command != FLASH_DEEP_POWER_DOWN && byte == 0xF0) ||
+            (mem.flash.command == FLASH_DEEP_POWER_DOWN && byte == 0xAB)) {
             mem.flash.command = NO_COMMAND;
             flash_reset_write_index(address, byte);
             return;
@@ -276,6 +305,7 @@ static void flash_write_handler(uint32_t address, uint8_t byte) {
 }
 
 uint8_t mem_read_byte(uint32_t address) {
+    static const uint8_t mmio_readcycles[0x20] = {2,2,4,3,2,2,2,2,2,2,2,2,2,2,2,2, 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2};
     uint8_t value = 0;
     uint32_t ramAddress;
 
@@ -308,14 +338,15 @@ uint8_t mem_read_byte(uint32_t address) {
 
         /* MMIO <-> Advanced Perphrial Bus */
         case 0xE: case 0xF:
-            cpu.cycles += 2;
-            value = port_read_byte(mmio_range(address)<<12 | addr_range(address));
+            cpu.cycles += mmio_readcycles[(address >> 16) & 0x1F];
+            value = (address > 0xFAFFFF) ? 0 : port_read_byte(mmio_range(address)<<12 | addr_range(address));
             break;
     }
     return value;
 }
 
-void mem_write_byte(uint32_t address, uint8_t byte) {
+void mem_write_byte(uint32_t address, uint8_t value) {
+    static const uint8_t mmio_writecycles[0x20] = {2,2,4,2,2,2,2,2,2,2,2,2,2,2,2,2, 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2};
     uint32_t ramAddress;
     address &= 0xFFFFFF;
 
@@ -326,7 +357,7 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
             if (mem.flash.locked && cpu.registers.PC >= control.privileged) {
                 cpu_nmi();
             } else {
-                flash_write_handler(address, byte);
+                flash_write_handler(address, value);
             }
             break;
 
@@ -340,14 +371,23 @@ void mem_write_byte(uint32_t address, uint8_t byte) {
             cpu.cycles += 2;
             ramAddress = address & 0x7FFFF;
             if (ramAddress < 0x65800) {
-                mem.ram.block[ramAddress] = byte;
+                mem.ram.block[ramAddress] = value;
             }
             break;
 
         /* MMIO <-> Advanced Perphrial Bus */
         case 0xE: case 0xF:
-            cpu.cycles += 2;
-            port_write_byte(mmio_range(address)<<12 | addr_range(address), byte);
+            cpu.cycles += mmio_writecycles[(address >> 16) & 0x1F];
+#ifdef DEBUG_SUPPORT
+            if (address >= DBG_PORT_RANGE) {
+                open_debugger(address, value);
+                break;
+            } else if (address >= CONSOLE_PORT_RANGE) {
+                gui_console_debug_char((const char)value);
+                break;
+            }
+#endif
+            port_write_byte(mmio_range(address)<<12 | addr_range(address), value);
             break;
     }
 #ifdef DEBUG_SUPPORT

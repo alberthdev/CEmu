@@ -18,6 +18,7 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QShortcut>
+#include <QtWidgets/QProgressDialog>
 #include <QtWidgets/QInputDialog>
 #include <QtQuickWidgets/QQuickWidget>
 #include <QtGui/QFont>
@@ -60,10 +61,15 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     ui->keypadWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
 
     // Emulator -> GUI
-    connect(&emu, &EmuThread::consoleStr, this, &MainWindow::consoleStr);
+    connect(&emu, &EmuThread::consoleStr, this, &MainWindow::consoleStr, Qt::QueuedConnection);
+    connect(&emu, &EmuThread::consoleChar, this, &MainWindow::consoleChar, Qt::QueuedConnection);
 
     // Console actions
-    connect(ui->buttonConsoleclear, &QPushButton::clicked, this, &MainWindow::clearConsole);
+    connect(ui->buttonConsoleclear, &QPushButton::clicked, ui->console, &QPlainTextEdit::clear);
+    connect(ui->buttonDebugCommand, &QPushButton::clicked, this, &MainWindow::debugCommand);
+    connect(ui->debugInput, &QLineEdit::returnPressed, this, &MainWindow::debugCommand);
+    connect(ui->radioConsole, &QRadioButton::clicked, this, &MainWindow::consoleOutputChanged);
+    connect(ui->radioStderr, &QRadioButton::clicked, this, &MainWindow::consoleOutputChanged);
 
     // Debugger
     connect(ui->buttonRun, &QPushButton::clicked, this, &MainWindow::changeDebuggerState);
@@ -79,10 +85,12 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->buttonRemoveBreakpoint, &QPushButton::clicked, this, &MainWindow::deleteBreakpoint);
     connect(ui->breakpointView, &QTableWidget::itemChanged, this, &MainWindow::breakpointCheckboxToggled);
     connect(ui->actionReset_Calculator, &QAction::triggered, this, &MainWindow::resetCalculator );
-    connect(ui->buttonStep, &QPushButton::clicked, this, &MainWindow::stepPressed);
-    connect(this, &MainWindow::setDebugStepMode, &emu, &EmuThread::setDebugStepMode);
+    connect(ui->buttonStepIn, &QPushButton::clicked, this, &MainWindow::stepInPressed);
+    connect(this, &MainWindow::setDebugStepInMode, &emu, &EmuThread::setDebugStepInMode);
     connect(ui->buttonStepOver, &QPushButton::clicked, this, &MainWindow::stepOverPressed);
     connect(this, &MainWindow::setDebugStepOverMode, &emu, &EmuThread::setDebugStepOverMode);
+    connect(ui->buttonStepNext, &QPushButton::clicked, this, &MainWindow::stepNextPressed);
+    connect(this, &MainWindow::setDebugStepNextMode, &emu, &EmuThread::setDebugStepNextMode);
     connect(ui->buttonStepOut, &QPushButton::clicked, this, &MainWindow::stepOutPressed);
     connect(this, &MainWindow::setDebugStepOutMode, &emu, &EmuThread::setDebugStepOutMode);
     connect(ui->buttonGoto, &QPushButton::clicked, this, &MainWindow::gotoPressed);
@@ -106,7 +114,6 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->buttonRefreshList, &QPushButton::clicked, this, &MainWindow::refreshVariableList);
     connect(this, &MainWindow::setReceiveState, &emu, &EmuThread::setReceiveState);
     connect(ui->buttonReceiveFiles, &QPushButton::clicked, this, &MainWindow::saveSelected);
-
     // Toolbar Actions
     connect(ui->actionSetup, &QAction::triggered, this, &MainWindow::runSetup);
     connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
@@ -152,10 +159,10 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     // Keybindings
     connect(ui->radioCEmuKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
-    connect(ui->radioTilEmKeys, &QPushButton::clicked, this, &MainWindow::keymapChanged);
-    connect(ui->radioWabbitemuKeys, &QPushButton::clicked, this, &MainWindow::keymapChanged);
-    connect(ui->radioPindurTIKeys, &QPushButton::clicked, this, &MainWindow::keymapChanged);
-    connect(ui->radioSmartViewKeys, &QPushButton::clicked, this, &MainWindow::keymapChanged);
+    connect(ui->radioTilEmKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
+    connect(ui->radioWabbitemuKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
+    connect(ui->radioPindurTIKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
+    connect(ui->radioSmartViewKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
 
     // Auto Updates
     connect(ui->checkUpdates, &QCheckBox::stateChanged, this, &MainWindow::autoCheckForUpdates);
@@ -176,6 +183,8 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     emu.rom = settings->value(QStringLiteral("romImage")).toString().toStdString();
     changeThrottleMode(Qt::Checked);
+
+    debugger_init();
 
     if (fileExists(emu.rom)) {
         emu.start();
@@ -221,6 +230,8 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 }
 
 MainWindow::~MainWindow() {
+    debugger_free();
+
     settings->setValue(QStringLiteral("windowState"), saveState(WindowStateVersion));
     settings->setValue(QStringLiteral("windowGeometry"), saveGeometry());
     settings->setValue(QStringLiteral("currDir"), currentDir.absolutePath());
@@ -242,8 +253,6 @@ void MainWindow::dropEvent(QDropEvent *e) {
     for(auto &&url : mime_data->urls()) {
         files.append(url.toLocalFile());
     }
-    setSendState(true);
-    QThread::msleep(50);
 
     sendFiles(files);
 }
@@ -290,9 +299,24 @@ void MainWindow::closeEvent(QCloseEvent *e) {
     QMainWindow::closeEvent(e);
 }
 
+void MainWindow::consoleChar(const char c) {
+    if (stderrConsole) {
+        if (c) {
+            fputc(c, stderr);
+        }
+    } else {
+        ui->console->moveCursor(QTextCursor::End);
+        ui->console->insertPlainText(QChar::fromLatin1(c));
+    }
+}
+
 void MainWindow::consoleStr(QString str) {
-    ui->console->moveCursor(QTextCursor::End);
-    ui->console->insertPlainText(str);
+    if (stderrConsole) {
+        fputs(str.toStdString().c_str(), stderr);
+    } else {
+        ui->console->moveCursor(QTextCursor::End);
+        ui->console->insertPlainText(str);
+    }
 }
 
 void MainWindow::changeThrottleMode(int mode) {
@@ -365,17 +389,38 @@ void MainWindow::setUIMode(bool docks_enabled) {
     ui->tabWidget->setHidden(true);
 }
 
+void MainWindow::saveScreenshot(QString namefilter, QString defaultsuffix, QString temppath) {
+    QFileDialog dialog(this);
+
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setDirectory(currentDir);
+    dialog.setNameFilter(namefilter);
+    dialog.setWindowTitle("Save Screen");
+    dialog.setDefaultSuffix(defaultsuffix);
+    dialog.exec();
+
+    if(!(dialog.selectedFiles().isEmpty())) {
+        QString filename = dialog.selectedFiles().at(0);
+        if (filename.isEmpty()) {
+            QFile(temppath).remove();
+        } else {
+            QFile(filename).remove();
+            QFile(temppath).rename(filename);
+        }
+    }
+    currentDir = dialog.directory();
+}
+
 void MainWindow::screenshot() {
     QImage image = renderFramebuffer();
 
-    QString filename = QFileDialog::getSaveFileName(this, tr("Save Screenshot"), QString(), tr("PNG images (*.png)"));
-    if (filename.isEmpty()) {
-        return;
-    }
-
-    if (!image.save(filename, "PNG", 0)) {
+    QString path = QDir::tempPath() + QDir::separator() + QStringLiteral("cemu_tmp.gif");
+    if (!image.save(path, "PNG", 0)) {
         QMessageBox::critical(this, tr("Screenshot failed"), tr("Failed to save screenshot!"));
     }
+
+    saveScreenshot(tr("PNG images (*.png)"), QStringLiteral("png"), path);
 }
 
 void MainWindow::screenshotGIF() {
@@ -384,14 +429,12 @@ void MainWindow::screenshotGIF() {
         return;
     }
 
-    QString filename = QFileDialog::getSaveFileName(this, tr("Save Screenshot"), QString(), tr("GIF images (*.gif)"));
-    if (filename.isEmpty()) {
-        return;
-    }
-
-    if (!gif_single_frame(filename.toStdString().c_str())) {
+    QString path = QDir::tempPath() + QDir::separator() + QStringLiteral("cemu_tmp.gif");
+    if (!gif_single_frame(path.toStdString().c_str())) {
         QMessageBox::critical(this, tr("Screenshot failed"), tr("Failed to save screenshot!"));
     }
+
+    saveScreenshot(tr("GIF images (*.gif)"), QStringLiteral("gif"), path);
 }
 
 void MainWindow::recordGIF() {
@@ -404,13 +447,7 @@ void MainWindow::recordGIF() {
         gif_start_recording(path.toStdString().c_str(), ui->frameskipSlider->value());
     } else {
         if (gif_stop_recording()) {
-            QString filename = QFileDialog::getSaveFileName(this, tr("Save Recording"), QString(), tr("GIF images (*.gif)"));
-            if(filename.isEmpty()) {
-                QFile(path).remove();
-            } else {
-                QFile(filename).remove();
-                QFile(path).rename(filename);
-            }
+            saveScreenshot(tr("GIF images (*.gif)"), QStringLiteral("gif"), path);
         } else {
             QMessageBox::warning(this, tr("Failed recording GIF"), tr("A failure occured during recording"));
         }
@@ -433,12 +470,6 @@ void MainWindow::changeFramerate() {
     float framerate = ((float) ui->refreshSlider->value()) / (ui->frameskipSlider->value() + 1);
     ui->framerateLabel->setText(QString::number(framerate).left(4));
 }
-
-void MainWindow::clearConsole(void) {
-    ui->console->clear();
-    consoleStr("Console Cleared.\n");
-}
-
 
 void MainWindow::autoCheckForUpdates(int state) {
     settings->setValue(QStringLiteral("autoUpdate"), state);
@@ -609,6 +640,10 @@ void MainWindow::changeEmulatedSpeed(int value) {
     emit changedEmuSpeed(actualSpeed);
 }
 
+void MainWindow::consoleOutputChanged() {
+    stderrConsole = ui->radioStderr->isChecked();
+}
+
 void MainWindow::keymapChanged() {
     if (ui->radioCEmuKeys->isChecked()) {
         changeKeymap(QStringLiteral("cemu"));
@@ -664,27 +699,46 @@ QStringList MainWindow::showVariableFileDialog(QFileDialog::AcceptMode mode) {
 }
 
 void MainWindow::sendFiles(QStringList fileNames) {
-    ui->sendBar->setMaximum(fileNames.size());
+    setSendState(true);
+    const unsigned int fileNum = fileNames.size();
 
-    for (int i = 0; i < fileNames.size(); i++) {
+    if (fileNum == 0) {
+        setSendState(false);
+        return;
+    }
+
+    /* Wait for an open link */
+    waitForLink = true;
+    do {
+        QThread::msleep(50);
+    } while(waitForLink);
+
+    QProgressDialog progress("Sending Files...", QString(), 0, fileNum, this);
+    progress.setWindowModality(Qt::WindowModal);
+
+    progress.show();
+    QApplication::processEvents();
+
+    for (unsigned int i = 0; i < fileNum; i++) {
         if(!sendVariableLink(fileNames.at(i).toUtf8())) {
             QMessageBox::warning(this, tr("Failed Transfer"), tr("A failure occured during transfer of: ")+fileNames.at(i));
         }
-        ui->sendBar->setValue(ui->sendBar->value()+1);
+        progress.setLabelText(fileNames.at(i).toUtf8());
+        progress.setValue(progress.value()+1);
+        QApplication::processEvents();
     }
 
+    progress.setValue(progress.value()+1);
+    QApplication::processEvents();
+    QThread::msleep(100);
+
     setSendState(false);
-    QThread::msleep(50);
-    ui->sendBar->setMaximum(1);
-    ui->sendBar->setValue(0);
 }
 
 void MainWindow::selectFiles() {
     if (debuggerOn) {
        return;
     }
-
-    setSendState(true);
 
     QStringList fileNames = showVariableFileDialog(QFileDialog::AcceptOpen);
 
@@ -715,7 +769,7 @@ void MainWindow::refreshVariableList() {
         ui->actionReset_Calculator->setEnabled(false);
         ui->buttonRun->setEnabled(false);
         setReceiveState(true);
-        QThread::msleep(50);
+        QThread::msleep(200);
 
         vat_search_init(&var);
         vars.clear();
@@ -805,7 +859,12 @@ static int hex2int(QString str) {
 }
 
 static QString int2hex(uint32_t a, uint8_t l) {
-    return QString::number(a, 16).rightJustified(l, '0').toUpper();
+    return QString::number(a, 16).rightJustified(l, '0', true).toUpper();
+}
+
+void MainWindow::debugCommand() {
+    emit debuggerCommand(ui->debugInput->text());
+    ui->debugInput->clear();
 }
 
 void MainWindow::raiseDebugger() {
@@ -932,10 +991,13 @@ void MainWindow::setDebuggerState(bool state) {
     ui->buttonRun->setIcon(icon);
     ui->buttonRun->setIconSize(pix.size());
 
+    ui->buttonDebugCommand->setEnabled( debuggerOn );
+    ui->debugInput->setEnabled( debuggerOn );
     ui->tabDebugging->setEnabled( debuggerOn );
     ui->buttonGoto->setEnabled( debuggerOn );
-    ui->buttonStep->setEnabled( debuggerOn );
+    ui->buttonStepIn->setEnabled( debuggerOn );
     ui->buttonStepOver->setEnabled( debuggerOn );
+    ui->buttonStepNext->setEnabled( debuggerOn );
     ui->buttonStepOut->setEnabled( debuggerOn );
     ui->groupCPU->setEnabled( debuggerOn );
     ui->groupFlags->setEnabled( debuggerOn );
@@ -1034,8 +1096,7 @@ void MainWindow::populateDebugWindow() {
     ui->iregView->setPalette(tmp == ui->iregView->text() ? nocolorback : colorback);
     ui->iregView->setText(tmp);
 
-    cpu.IM -= !!cpu.IM;
-    tmp = int2hex(cpu.IM, 1);
+    tmp = int2hex(cpu.IM - !!cpu.IM, 1);
     ui->imregView->setPalette(tmp == ui->imregView->text() ? nocolorback : colorback);
     ui->imregView->setText(tmp);
 
@@ -1043,8 +1104,7 @@ void MainWindow::populateDebugWindow() {
     ui->pcregView->setPalette(tmp == ui->pcregView->text() ? nocolorback : colorback);
     ui->pcregView->setText(tmp);
 
-    cpu.registers.R = cpu.registers.R >> 1 | cpu.registers.R << 7;
-    tmp = int2hex(cpu.registers.R, 2);
+    tmp = int2hex(cpu.registers.R >> 1 | cpu.registers.R << 7, 2);
     ui->rregView->setPalette(tmp == ui->rregView->text() ? nocolorback : colorback);
     ui->rregView->setText(tmp);
 
@@ -1406,8 +1466,28 @@ void MainWindow::deleteBreakpoint() {
     updateDisasmView(address, true);
 }
 
+void MainWindow::executeDebugCommand(uint32_t debugAddress, uint8_t command) {
+    switch (command) {
+        case 1:
+            consoleStr("Program Aborted.\n");
+            break;
+        case 2:
+            consoleStr("Program Entered Debugger.\n");
+            break;
+        default:
+            break;
+    }
+}
+
 void MainWindow::processDebugCommand(int reason, uint32_t input) {
     int row = 0;
+
+    /* This means the program is trying to send us a debug command. Let's see what we can do with that information. */
+    if (reason > NUM_DBG_COMMANDS) {
+       updateDisasmView(cpu.registers.PC, true);
+       executeDebugCommand(static_cast<uint32_t>(reason-DBG_PORT_RANGE), static_cast<uint8_t>(input));
+       return;
+    }
 
     if (reason == DBG_STEP || reason == DBG_USER) {
         updateDisasmView(cpu.registers.PC, true);
@@ -1448,15 +1528,9 @@ void MainWindow::updatePortData(int currentRow) {
 
 void MainWindow::resetCalculator() {
     if (emu.stop()) {
-        while(ui->portView->rowCount() > 0) {
-            ui->portView->removeRow(0);
-        }
-        while(ui->breakpointView->rowCount() > 0) {
-            ui->breakpointView->removeRow(0);
-        }
         emu.start();
         if(debuggerOn) {
-            emit setDebugStepMode();
+            emit setDebugStepInMode();
         }
     } else {
         qDebug("Reset Failed.");
@@ -1608,15 +1682,27 @@ void MainWindow::opContextMenu(const QPoint& posa) {
     }
 }
 
-void MainWindow::stepPressed() {
+void MainWindow::stepInPressed() {
     debuggerOn = false;
     updateDebuggerChanges();
-    emit setDebugStepMode();
+    emit setDebugStepInMode();
 }
 
 void MainWindow::stepOverPressed() {
+    disasm.base_address = cpu.registers.PC;
+    disasm.adl = cpu.ADL;
+    disassembleInstruction();
+    if (disasm.instruction.opcode == "call" || disasm.instruction.opcode == "rst") {
+        setDebuggerState(false);
+        emit setDebugStepOverMode();
+    } else {
+        stepInPressed();
+    }
+}
+
+void MainWindow::stepNextPressed() {
     setDebuggerState(false);
-    emit setDebugStepOverMode();
+    emit setDebugStepNextMode();
 }
 
 void MainWindow::stepOutPressed() {

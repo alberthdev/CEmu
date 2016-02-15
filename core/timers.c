@@ -66,11 +66,6 @@ static void gpt_refresh(int index) {
     }
 }
 
-static void gpt_update(int index) {
-    gpt_restore(index);
-    gpt_refresh(index);
-}
-
 static void gpt_event(int index) {
     uint64_t next_event = gpt_next_event(index);
     if (next_event) {
@@ -89,10 +84,11 @@ static void gpt_some(int which, void update(int index)) {
 
 static uint8_t gpt_read(uint16_t address) {
     uint8_t value = 0;
-    gpt_some(address >> 4 & 0b11, gpt_update);
+    gpt_some(address >> 4 & 0b11, gpt_restore);
     if (address < 0x40) {
         value = ((uint8_t *)&gpt)[address];
     }
+    gpt_some(address >> 4 & 0b11, gpt_refresh);
     return value;
 }
 
@@ -123,7 +119,7 @@ void gpt_reset() {
     sched.items[SCHED_OSTIMER].clock = CLOCK_32K;
     sched.items[SCHED_OSTIMER].proc = ost_event;
     event_set(SCHED_OSTIMER, ost_ticks[control.ports[0] & 3]);
-    gui_console_printf("GPT reset.\n");
+    gui_console_printf("[CEmu] GPT reset.\n");
 }
 
 static const eZ80portrange_t device = {
@@ -133,6 +129,6 @@ static const eZ80portrange_t device = {
 
 eZ80portrange_t init_gpt(void) {
     gpt.revision = 0x00010801;
-    gui_console_printf("Initialized general purpose timers...\n");
+    gui_console_printf("[CEmu] Initialized GP timers...\n");
     return device;
 }

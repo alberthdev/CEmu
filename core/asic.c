@@ -69,31 +69,28 @@ static void plug_devices(void) {
     add_reset_proc(watchdog_reset);
     add_reset_proc(mem_reset);
 
-    gui_console_printf("Initialized APB...\n");
+    gui_console_printf("[CEmu] Initialized APB...\n");
 }
 
 void asic_init(void) {
     /* First, initilize memory and LCD */
     mem_init();
     cpu_init();
-#ifdef DEBUG_SUPPORT
-    debugger_init();
-#endif
+
     asic.mem = &mem;
     asic.cpu = &cpu;
 
     plug_devices();
-    gui_console_printf("Initialized ASIC...\n");
+    gui_console_printf("[CEmu] Initialized ASIC...\n");
 }
 
 void asic_free(void) {
+    /* make sure the LCD doesn't use unalloced mem */
+    lcd.upcurr = lcd.upbase = 0;
     mem_free();
-#ifdef DEBUG_SUPPORT
-    debugger_free();
-#endif
     asic.mem = NULL;
     asic.cpu = NULL;
-    gui_console_printf("Freed ASIC...\n");
+    gui_console_printf("[CEmu] Freed ASIC.\n");
 }
 
 void asic_reset(void) {

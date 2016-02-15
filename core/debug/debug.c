@@ -15,7 +15,7 @@ void debugger_init(void) {
     debugger.data.ports = (uint8_t*)calloc(0x10000, sizeof(uint8_t));      /* Allocate Debug Port Monitor */
 
     debugger.runUntilSet = false;
-    gui_console_printf("Initialized Debugger...\n");
+    gui_console_printf("[CEmu] Initialized Debugger...\n");
 }
 
 void debugger_free(void) {
@@ -25,7 +25,7 @@ void debugger_free(void) {
     if (debugger.data.ports) {
         free(debugger.data.ports);
     }
-    gui_console_printf("Freed Debugger.\n");
+    gui_console_printf("[CEmu] Freed Debugger.\n");
 }
 uint8_t debug_read_byte(uint32_t address) {
     uint8_t *ptr, value = 0;
@@ -85,11 +85,12 @@ void debug_port_write_byte(uint32_t address, uint8_t value) {
 
 /* okay, so looking at the data inside the asic should be okay when using this function, */
 /* since it is called outside of cpu_execute(). Which means no read/write errors. */
-void open_debugger(int reason, uint32_t address) {
+void open_debugger(int reason, uint32_t data) {
     if (inDebugger) {
         return; // don't recurse
     }
     debugger.cpu_cycles = cpu.cycles;
+    debugger.cpu_next = cpu.next;
     gui_debugger_entered_or_left(inDebugger = true);
 
     if (debugger.stepOverAddress < 0x1000000) {
@@ -97,16 +98,17 @@ void open_debugger(int reason, uint32_t address) {
         debugger.stepOverAddress = UINT32_C(0xFFFFFFFF);
     }
 
-    gui_debugger_send_command(reason, address);
+    gui_debugger_send_command(reason, data);
 
     do {
         gui_emu_sleep();
     } while(inDebugger);
 
     gui_debugger_entered_or_left(inDebugger = false);
+    cpu.next = debugger.cpu_next;
     cpu.cycles = debugger.cpu_cycles;
     if (cpu_events & EVENT_DEBUG_STEP) {
-        cpu.next = cpu.cycles + 1;
+        cpu.next = debugger.cpu_cycles + 1;
     }
 }
 

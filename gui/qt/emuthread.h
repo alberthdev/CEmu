@@ -23,7 +23,9 @@ signals:
     // Debugger
     void debuggerEntered();
     void sendDebugCommand(int, uint32_t);
+    void debugInputRequested(bool);
 
+    void consoleChar(char);
     void consoleStr(QString);
     void exited(int);
 
@@ -35,9 +37,11 @@ public slots:
 
     // Debugging
     void setDebugMode(bool);
-    void setDebugStepMode();
+    void setDebugStepInMode();
     void setDebugStepOverMode();
+    void setDebugStepNextMode();
     void setDebugStepOutMode();
+    void debuggerInput(QString str);
 
     // Linking
     void setSendState(bool);
@@ -56,9 +60,11 @@ private:
     bool throttleOn = true;
     int speed, actualSpeed;
     std::chrono::steady_clock::time_point lastTime;
+    std::string debugInput;
 };
 
 // For friends
 extern EmuThread *emu_thread;
+extern volatile bool waitForLink;
 
 #endif

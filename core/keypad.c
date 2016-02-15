@@ -1,3 +1,9 @@
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
+#define EMSCRIPTEN_KEEPALIVE
+#endif
+
 #include "keypad.h"
 #include "emu.h"
 #include "schedule.h"
@@ -12,7 +18,7 @@ void keypad_intrpt_check() {
     intrpt_set(INT_KEYPAD, (keypad.status & keypad.enable) | (keypad.gpio_status & keypad.gpio_enable));
 }
 
-void keypad_key_event(unsigned int row, unsigned int col, bool press) {
+void EMSCRIPTEN_KEEPALIVE keypad_key_event(unsigned int row, unsigned int col, bool press) {
     if (row == 2 && col == 0) {
         intrpt_set(INT_ON, press);
         if (press && calc_is_off()) {
@@ -174,7 +180,7 @@ void keypad_reset() {
     sched.items[SCHED_KEYPAD].second = -1;
     sched.items[SCHED_KEYPAD].proc = keypad_scan_event;
 
-    gui_console_printf("Keypad reset.\n");
+    gui_console_printf("[CEmu] Keypad reset.\n");
 }
 
 static const eZ80portrange_t device = {
@@ -183,6 +189,6 @@ static const eZ80portrange_t device = {
 };
 
 eZ80portrange_t init_keypad(void) {
-    gui_console_printf("Initialized keypad...\n");
+    gui_console_printf("[CEmu] Initialized keypad...\n");
     return device;
 }
