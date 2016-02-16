@@ -39,7 +39,8 @@ In fact, the core has even been succesfully [tested](https://github.com/MateoCon
 
 ## Downloads
 No stable binaries yet as the code keeps changing these days! When available, they'll be here, though: https://github.com/MateoConLechuga/CEmu/releases  
-Nightly win32 binaries available here (hosted by pimathbrainiac): http://pimathbrainiac.me/CEmu/  
+Snapshot win32 binaries updated every time this repository updates, available [here](https://oss.jfrog.org/artifactory/list/oss-snapshot-local/org/github/alberthdev/cemu/git/) (hosted by alberthdev).
+Nightly win32 binaries available [here](http://pimathbrainiac.me/CEmu/) (hosted by pimathbrainiac).
 _Note that Release builds have an update checking feature, which is disabled in development builds._
 
 ## How to build
