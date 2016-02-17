@@ -22,10 +22,11 @@ extern "C" {
 
 typedef struct asic_state {
     ti_device_type deviceType;
+    eZ80portrange_t portRange[0x10];    /* 0x0-0xF */
 
     mem_state_t* mem;
     eZ80cpu_t *cpu;
-} __attribute__((packed)) asic_state_t;
+} asic_state_t;
 
 /* External Global ASIC state */
 extern asic_state_t asic;
