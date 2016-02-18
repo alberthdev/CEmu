@@ -66,7 +66,7 @@ void lcd_drawframe(uint32_t *out) {
     bool bebo = lcd.control & (1 << 9);
     uint_fast32_t words = 320 * 240;
     uint_fast32_t word, color;
-    uint32_t *ofs = (uint32_t *) ((uint32_t) lcd.upbase & (lcd_dma_size - 8));
+    uint32_t *ofs = (uint32_t *) ((uint32_t) lcd.upcurr & (lcd_dma_size - 8));
 
     if(!mem.ram.block) {
         memset(out, 0, 320 * 240 * 4);
@@ -228,13 +228,13 @@ void lcd_write(const uint16_t pio, const uint8_t value) {
         } else if (index < 0x014 && index >= 0x010) {
             write8(lcd.upbase, bit_offset, value);
             if (lcd.upbase & 7) {
-                gui_console_printf("Warning: LCD upper panel base not 8-byte aligned!\n");
+                gui_console_printf("[CEmu] Warning: LCD upper panel base not 8-byte aligned\n");
             }
             lcd.upbase &= ~7U;
         } else if (index < 0x018 && index >= 0x014) {
             write8(lcd.lpbase, bit_offset, value);
             if (lcd.lpbase & 7) {
-                gui_console_printf("Warning: LCD lower panel base not 8-byte aligned!\n");
+                gui_console_printf("[CEmu] Warning: LCD lower panel base not 8-byte aligned\n");
             }
             lcd.lpbase &= ~7U;
         } else if (index == 0x018) {
