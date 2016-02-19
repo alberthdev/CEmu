@@ -130,6 +130,7 @@ private:
     bool addBreakpoint();
 
     // Others
+    void createLCD();
     void screenContextMenu(const QPoint &);
     void addEquateFileDialog();
     void addEquateFile(QString);
@@ -191,6 +192,7 @@ private:
 
     // Members
     QString getAddressString(bool &, QString);
+    QString searchingString;
 
     Ui::MainWindow *ui = nullptr;
     QLabel statusLabel;
