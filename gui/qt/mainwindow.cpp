@@ -192,7 +192,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     setAcceptDrops(true);
     debuggerOn = false;
 
-    settings = new QSettings();
+    settings = new QSettings(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/CEmu/cemu_config.ini"), QSettings::IniFormat);
 
     changeThrottleMode(Qt::Checked);
     emu.rom = settings->value(QStringLiteral("romImage")).toString().toStdString();
@@ -208,16 +208,11 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     currentDir.setPath((settings->value(QStringLiteral("currDir"), QDir::homePath()).toString()));
     if(settings->value(QStringLiteral("savedImagePath")).toString().isEmpty()) {
-        QString path = QDir::cleanPath(QDir::tempPath() + QDir::separator() + QStringLiteral("CEmuImage.ce"));
+        QString path = QDir::cleanPath(QFileInfo(settings->fileName()).absoluteDir().absolutePath() + QStringLiteral("/cemu_image.ce"));
         settings->setValue(QStringLiteral("savedImagePath"),path);
     }
     ui->savedImagePath->setText(settings->value(QStringLiteral("savedImagePath")).toString());
-
-    debugger_init();
-    isResumed = false;
-    if(settings->value(QStringLiteral("restoreOnOpen")).toBool()) {
-        isResumed = restoreEmuState();
-    }
+    emu.imagePath = ui->savedImagePath->text().toStdString();
 
     QString currKeyMap = settings->value(QStringLiteral("keyMap"), "cemu").toString();
     if (QStringLiteral("cemu").compare(currKeyMap, Qt::CaseInsensitive) == 0) {
@@ -239,17 +234,27 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     ui->vatView->cursorState(true);
     ui->opView->cursorState(true);
 
-    if (!isResumed) {
-        if (fileExists(emu.rom)) {
-            emu.start();
-        } else if (!runSetup()) {
+    if (!fileExists(emu.rom)) {
+        if (!runSetup()) {
             exit(0);
         }
     }
 
+    if(settings->value(QStringLiteral("restoreOnOpen")).toBool()) {
+        if (fileExists(emu.imagePath)) {
+            restoreEmuState();
+        } else {
+           emu.start();
+        }
+    } else {
+        emu.start();
+    }
+
+    debugger_init();
+
+    alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
     restoreGeometry(settings->value(QStringLiteral("windowGeometry")).toByteArray());
     restoreState(settings->value(QStringLiteral("windowState")).toByteArray(), WindowStateVersion);
-    alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
 }
 
 MainWindow::~MainWindow() {
@@ -839,6 +844,10 @@ QStringList MainWindow::showVariableFileDialog(QFileDialog::AcceptMode mode) {
 }
 
 void MainWindow::sendFiles(QStringList fileNames) {
+    if (inDebugger) {
+        return;
+    }
+
     setSendState(true);
     const unsigned int fileNum = fileNames.size();
 
@@ -1317,7 +1326,7 @@ void MainWindow::populateDebugWindow() {
     updateStackView();
     ramUpdate();
     flashUpdate();
-    memUpdate();
+    memUpdate(cpu.registers.PC);
 }
 
 void MainWindow::updateTIOSView() {
@@ -1402,8 +1411,7 @@ void MainWindow::portMonitorCheckboxToggled(QTableWidgetItem * item) {
     uint16_t port = static_cast<uint16_t>(hex2int(ui->portView->item(row, 0)->text()));
     uint8_t value = DBG_NO_HANDLE;
 
-    if (col > 1)
-    {
+    if (col > 1) {
         if (col == 2) { // Break on read
             value = DBG_PORT_READ;
         }
@@ -1528,12 +1536,11 @@ void MainWindow::breakpointCheckboxToggled(QTableWidgetItem * item) {
         }
         if (col == 3) { // Break on execution
             value = DBG_EXEC_BREAKPOINT;
+            updateDisasmView(address, true);
         }
     }
 
     debug_breakpoint_set(address, value, item->checkState() == Qt::Checked);
-
-    updateDisasmView(address, true);
 }
 
 bool MainWindow::addBreakpoint() {
@@ -1624,39 +1631,32 @@ void MainWindow::processDebugCommand(int reason, uint32_t input) {
 
     /* This means the program is trying to send us a debug command. Let's see what we can do with that information. */
     if (reason > NUM_DBG_COMMANDS) {
-       updateDisasmView(cpu.registers.PC, true);
        executeDebugCommand(static_cast<uint32_t>(reason-DBG_PORT_RANGE), static_cast<uint8_t>(input));
        return;
     }
 
-    if (reason == DBG_STEP || reason == DBG_USER) {
-        updateDisasmView(cpu.registers.PC, true);
-    }
-
     // We hit a normal breakpoint; raise the correct entry in the port monitor table
     if (reason == HIT_READ_BREAKPOINT || reason == HIT_WRITE_BREAKPOINT || reason == HIT_EXEC_BREAKPOINT) {
-        ui->tabDebugging->setCurrentIndex(0);
-
         // find the correct entry
         while( static_cast<uint32_t>(hex2int(ui->breakpointView->item(row++, 0)->text())) != input );
         row--;
 
         ui->breakChangeView->setText("Address "+ui->breakpointView->item(row, 0)->text()+" "+((reason == HIT_READ_BREAKPOINT) ? "Read" : (reason == HIT_WRITE_BREAKPOINT) ? "Write" : "Executed"));
         ui->breakpointView->selectRow(row);
-
-        updateDisasmView(input, true);
+        if (reason != HIT_EXEC_BREAKPOINT) {
+            memUpdate(input);
+        }
     }
 
     // We hit a port read or write; raise the correct entry in the port monitor table
     if (reason == HIT_PORT_READ_BREAKPOINT || reason == HIT_PORT_WRITE_BREAKPOINT) {
-        ui->tabDebugging->setCurrentIndex(1);
-        // find the correct entry
         while( static_cast<uint32_t>(hex2int(ui->portView->item(row++, 0)->text())) != input );
         row--;
 
         ui->portChangeView->setText("Port "+ui->portView->item(row, 0)->text()+" "+((reason == HIT_PORT_READ_BREAKPOINT) ? "Read" : "Write"));
         ui->portView->selectRow(row);
     }
+    updateDisasmView(cpu.registers.PC, true);
 }
 
 void MainWindow::updatePortData(int currentRow) {
@@ -1670,7 +1670,7 @@ void MainWindow::reloadROM() {
     if (emu.stop()) {
         emu.start();
         if(debuggerOn) {
-            emit setDebugStepInMode();
+            changeDebuggerState();
         }
         qDebug("Reset Successful.");
     } else {
@@ -1744,7 +1744,7 @@ void MainWindow::drawNextDisassembleLine() {
         disasmOffsetSet = true;
         disasmOffset = ui->disassemblyView->textCursor();
         disasmOffset.movePosition(QTextCursor::StartOfLine);
-    } else if (disasmOffsetSet == false && addressPane <= disasm.base_address+7) {
+    } else if (disasmOffsetSet == false && addressPane <= disasm.base_address+8) {
         disasmOffsetSet = true;
         disasmOffset = ui->disassemblyView->textCursor();
         disasmOffset.movePosition(QTextCursor::StartOfLine);
@@ -1916,7 +1916,7 @@ void MainWindow::ramUpdate() {
     ui->ramEdit->setLine(line);
 }
 
-void MainWindow::memUpdate() {
+void MainWindow::memUpdate(uint32_t addressBegin) {
     ui->memEdit->setFocus();
     QByteArray mem_data;
 
@@ -1927,7 +1927,7 @@ void MainWindow::memUpdate() {
         start = static_cast<int32_t>(ui->memEdit->addressOffset());
         line = ui->memEdit->getLine();
     } else {
-        start = static_cast<int32_t>(cpu.registers.PC) - 0x1000;
+        start = static_cast<int32_t>(addressBegin) - 0x1000;
     }
 
     if (start < 0) { start = 0; }
@@ -1946,7 +1946,7 @@ void MainWindow::memUpdate() {
     if (locked) {
         ui->memEdit->setLine(line);
     } else {
-        ui->memEdit->setCursorPosition((cpu.registers.PC-start)<<1);
+        ui->memEdit->setCursorPosition((addressBegin-start)<<1);
         ui->memEdit->ensureVisible();
     }
 }
