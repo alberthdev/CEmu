@@ -660,19 +660,16 @@ void MainWindow::autoCheckForUpdates(int state) {
 }
 
 void MainWindow::checkForUpdates(bool forceInfoBox) {
-    #define STRINGIFYMAGIC(x) #x
-    #define STRINGIFY(x) STRINGIFYMAGIC(x)
-
-    if (QStringLiteral(STRINGIFY(CEMU_VERSION)).endsWith(QStringLiteral("dev")))
+    if (QStringLiteral(CEMU_VERSION).contains(QStringLiteral("dev")))
     {
         if (forceInfoBox)
         {
-            QMessageBox::warning(this, tr("Update check disabled"), tr("Checking updates is disabled for developer builds"));
+            QMessageBox::warning(this, tr("Update check disabled"), tr("Checking updates is disabled for development builds"));
         }
         return;
     }
 
-    static const QString currentVersionReleaseURL = QStringLiteral("https://github.com/MateoConLechuga/CEmu/releases/tag/" STRINGIFY(CEMU_VERSION));
+    static const QString currentVersionReleaseURL = QStringLiteral("https://github.com/CE-Programming/CEmu/releases/tag/" CEMU_VERSION);
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     connect(manager, &QNetworkAccessManager::finished, this, [=](QNetworkReply* reply) {
         QString newVersionURL = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toString();
@@ -682,7 +679,7 @@ void MainWindow::checkForUpdates(bool forceInfoBox) {
             {
                 if (forceInfoBox)
                 {
-                    QMessageBox::information(this, tr("No update available"), tr("You already have the latest CEmu version (" STRINGIFY(CEMU_VERSION) ")"));
+                    QMessageBox::information(this, tr("No update available"), tr("You already have the latest CEmu version (" CEMU_VERSION ")"));
                 }
             } else {
                 QMessageBox updateInfoBox(this);
@@ -706,7 +703,7 @@ void MainWindow::checkForUpdates(bool forceInfoBox) {
                 updateInfoBox.setWindowTitle(tr("Update check failed"));
                 updateInfoBox.setText(tr("<b>An error occurred while checking for CEmu updates.</b>"
                                          "<br/>"
-                                         "You can however <a href='https://github.com/MateoConLechuga/CEmu/releases/latest'>go here</a> to check yourself."));
+                                         "You can however <a href='https://github.com/CE-Programming/CEmu/releases/latest'>go here</a> to check yourself."));
                 updateInfoBox.setTextFormat(Qt::RichText);
                 updateInfoBox.show();
                 updateInfoBox.exec();
@@ -714,15 +711,10 @@ void MainWindow::checkForUpdates(bool forceInfoBox) {
         }
     });
 
-    manager->get(QNetworkRequest(QUrl(QStringLiteral("https://github.com/MateoConLechuga/CEmu/releases/latest"))));
-
-    #undef STRINGIFY
-    #undef STRINGIFYMAGIC
+    manager->get(QNetworkRequest(QUrl(QStringLiteral("https://github.com/CE-Programming/CEmu/releases/latest"))));
 }
 
 void MainWindow::showAbout() {
-    #define STRINGIFYMAGIC(x) #x
-    #define STRINGIFY(x) STRINGIFYMAGIC(x)
     QMessageBox about_box(this);
     about_box.setIconPixmap(QPixmap(":/icons/resources/icons/icon.png"));
     about_box.setWindowTitle(tr("About CEmu"));
@@ -734,7 +726,7 @@ void MainWindow::showAbout() {
     okButton->setFocus();
 
     about_box.setText(tr("<h3>CEmu %1</h3>"
-                         "<a href='https://github.com/MateoConLechuga/CEmu'>On GitHub</a><br>"
+                         "<a href='https://github.com/CE-Programming/CEmu'>On GitHub</a><br>"
                          "<br>"
                          "Main authors:<br>"
                          "Matt Waltz (<a href='https://github.com/MateoConLechuga'>MateoConLechuga</a>)<br>"
@@ -749,12 +741,10 @@ void MainWindow::showAbout() {
                          "<br>"
                          "This work is licensed under the GPLv3.<br>"
                          "To view a copy of this license, visit <a href='https://www.gnu.org/licenses/gpl-3.0.html'>https://www.gnu.org/licenses/gpl-3.0.html</a>")
-                         .arg(QStringLiteral(STRINGIFY(CEMU_VERSION))));
+                         .arg(QStringLiteral(CEMU_VERSION)));
     about_box.setTextFormat(Qt::RichText);
     about_box.show();
     about_box.exec();
-    #undef STRINGIFY
-    #undef STRINGIFYMAGIC
 }
 
 void MainWindow::screenContextMenu(const QPoint &posa) {
