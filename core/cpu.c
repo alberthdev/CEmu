@@ -387,9 +387,17 @@ static void cpu_call(uint32_t address, bool mixed) {
     cpu_prefetch(address, cpu.IL);
 }
 
-static void cpu_trap(void) {
+static void cpu_trap_rewind(uint_fast8_t rewind) {
+    eZ80registers_t *r = &cpu.registers;
+    cpu_fetch_byte();
+    cpu.cycles++;
+    r->PC = cpu_mask_mode(r->PC - 1 - rewind, cpu.ADL);
     cpu_clear_mode();
     cpu_call(0x00, cpu.MADL);
+}
+
+static void cpu_trap(void) {
+    cpu_trap_rewind(1);
 }
 
 static void cpu_check_step_out(void) {
@@ -520,7 +528,7 @@ static void cpu_execute_rot(int y, int z, uint32_t address, uint8_t value) {
             new_c = old_0;
             break;
         case 6: // OPCODETRAP
-            cpu_trap();
+            cpu_trap_rewind(1 + (cpu.PREFIX != 0));
             return;
         case 7: // SRL value[z]
             value >>= 1;
@@ -1019,6 +1027,7 @@ void cpu_execute(void) {
                                             r->_HL = w;
                                             break;
                                         case 2: // JP (rr)
+                                            cpu_fetch_byte();
                                             cpu_prefetch(cpu_read_index(), cpu.L);
                                             cpu_check_step_out();
                                             break;
