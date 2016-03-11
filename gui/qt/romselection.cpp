@@ -9,8 +9,6 @@
 #include "utils.h"
 #include "../../core/os/os.h"
 
-std::string romImagePath;
-
 static const size_t totalROMSize = 0x400000;
 static const uint32_t segmentROMSize = 0xFFE9;
 
@@ -277,6 +275,11 @@ void RomSelection::saveROMImage() {
 
     close();
 }
+
+std::string RomSelection::getROMImage() {
+    return romImagePath;
+}
+
 
 /**
  * ROM dumping program
