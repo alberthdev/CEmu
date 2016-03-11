@@ -186,19 +186,19 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->checkUpdates, &QCheckBox::stateChanged, this, &MainWindow::autoCheckForUpdates);
 
     // Shortcut Connections
-    QShortcut *stepInShortcut = new QShortcut(QKeySequence(Qt::Key_F6), this);
-    QShortcut *stepOverShortcut = new QShortcut(QKeySequence(Qt::Key_F7), this);
-    QShortcut *stepNextShortcut = new QShortcut(QKeySequence(Qt::Key_F8), this);
-    QShortcut *stepOutShortcut = new QShortcut(QKeySequence(Qt::Key_F9), this);
-    QShortcut *DebuggerShortcut = new QShortcut(QKeySequence(Qt::Key_F10), this);
+    stepInShortcut = new QShortcut(QKeySequence(Qt::Key_F6), this);
+    stepOverShortcut = new QShortcut(QKeySequence(Qt::Key_F7), this);
+    stepNextShortcut = new QShortcut(QKeySequence(Qt::Key_F8), this);
+    stepOutShortcut = new QShortcut(QKeySequence(Qt::Key_F9), this);
+    debuggerShortcut = new QShortcut(QKeySequence(Qt::Key_F10), this);
 
-    DebuggerShortcut->setAutoRepeat(false);
+    debuggerShortcut->setAutoRepeat(false);
     stepInShortcut->setAutoRepeat(false);
     stepOverShortcut->setAutoRepeat(false);
     stepNextShortcut->setAutoRepeat(false);
     stepOutShortcut->setAutoRepeat(false);
 
-    connect(DebuggerShortcut, &QShortcut::activated, this, &MainWindow::changeDebuggerState);
+    connect(debuggerShortcut, &QShortcut::activated, this, &MainWindow::changeDebuggerState);
     connect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
     connect(stepOverShortcut, &QShortcut::activated, this, &MainWindow::stepOverPressed);
     connect(stepNextShortcut, &QShortcut::activated, this, &MainWindow::stepNextPressed);
@@ -1054,6 +1054,10 @@ void MainWindow::raiseDebugger() {
 
     populateDebugWindow();
     setDebuggerState(true);
+    connect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
+    connect(stepOverShortcut, &QShortcut::activated, this, &MainWindow::stepOverPressed);
+    connect(stepNextShortcut, &QShortcut::activated, this, &MainWindow::stepNextPressed);
+    connect(stepOutShortcut, &QShortcut::activated, this, &MainWindow::stepOutPressed);
 }
 
 void MainWindow::updateDebuggerChanges() {
@@ -1411,10 +1415,10 @@ void MainWindow::updateDisasmView(const int sentBase, const bool newPane) {
     disasmOffsetSet = false;
     disasm.adl = ui->checkADL->isChecked();
     disasm.base_address = -1;
-    disasm.new_address = addressPane - ((newPane) ? 0x80 : 0);
-    if(disasm.new_address < 0) disasm.new_address = 0;
-    int32_t last_address = disasm.new_address + 0x100;
-    if(last_address > 0xFFFFFF) last_address = 0xFFFFFF;
+    disasm.new_address = addressPane - ((newPane) ? 0x40 : 0);
+    if (disasm.new_address < 0) disasm.new_address = 0;
+    int32_t last_address = disasm.new_address + 0x120;
+    if (last_address > 0xFFFFFF) last_address = 0xFFFFFF;
 
     ui->disassemblyView->clear();
     ui->disassemblyView->clearAllHighlights();
@@ -1725,18 +1729,18 @@ void MainWindow::drawNextDisassembleLine() {
     std::string *label = 0;
     if (disasm.base_address != disasm.new_address) {
         disasm.base_address = disasm.new_address;
-        addressMap_t::iterator item = disasm.address_map.find(disasm.new_address);
-        if (item != disasm.address_map.end()) {
+        addressMap_t::iterator item = disasm.addressMap.find(disasm.new_address);
+        if (item != disasm.addressMap.end()) {
             disasmHighlight.hit_read_breakpoint = false;
             disasmHighlight.hit_write_breakpoint = false;
             disasmHighlight.hit_exec_breakpoint = false;
             disasmHighlight.hit_run_breakpoint = false;
             disasmHighlight.hit_pc = false;
 
-            disasm.instruction.data = "";
-            disasm.instruction.opcode = "";
-            disasm.instruction.mode_suffix = " ";
-            disasm.instruction.arguments = "";
+            disasm.instruction.data.clear();
+            disasm.instruction.opcode.clear();
+            disasm.instruction.mode_suffix.clear();
+            disasm.instruction.arguments.clear();
             disasm.instruction.size = 0;
 
             label = &item->second;
@@ -1769,7 +1773,6 @@ void MainWindow::drawNextDisassembleLine() {
 
     ui->disassemblyView->blockSignals(true);
     ui->disassemblyView->appendHtml(formattedLine);
-    ui->disassemblyView->blockSignals(false);
 
     if (!disasmOffsetSet && disasm.new_address > addressPane) {
         disasmOffsetSet = true;
@@ -1783,6 +1786,7 @@ void MainWindow::drawNextDisassembleLine() {
     if (disasmHighlight.hit_pc == true) {
         ui->disassemblyView->addHighlight(QColor(Qt::red).lighter(160));
     }
+    ui->disassemblyView->blockSignals(false);
 }
 
 void MainWindow::disasmContextMenu(const QPoint& posa) {
@@ -1854,6 +1858,8 @@ void MainWindow::stepInPressed() {
     if(!inDebugger) {
         return;
     }
+
+    disconnect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
     debuggerOn = false;
     updateDebuggerChanges();
     emit setDebugStepInMode();
@@ -1868,6 +1874,8 @@ void MainWindow::stepOverPressed() {
     if(!inDebugger) {
         return;
     }
+
+    disconnect(stepOverShortcut, &QShortcut::activated, this, &MainWindow::stepOverPressed);
     disasm.base_address = cpu.registers.PC;
     disasm.adl = cpu.ADL;
     disassembleInstruction();
@@ -1883,6 +1891,8 @@ void MainWindow::stepNextPressed() {
     if(!inDebugger) {
         return;
     }
+
+    disconnect(stepNextShortcut, &QShortcut::activated, this, &MainWindow::stepNextPressed);
     setDebuggerState(false);
     emit setDebugStepNextMode();
 }
@@ -1891,6 +1901,7 @@ void MainWindow::stepOutPressed() {
     if(!inDebugger) {
         return;
     }
+    disconnect(stepOutShortcut, &QShortcut::activated, this, &MainWindow::stepOutPressed);
     setDebuggerState(false);
     emit setDebugStepOutMode();
 }
@@ -2131,7 +2142,7 @@ void MainWindow::memSyncPressed() {
 void MainWindow::clearEquateFile() {
     // Reset the map
     currentEquateFile.clear();
-    disasm.address_map.clear();
+    disasm.addressMap.clear();
     QMessageBox::warning(this, tr("Equates Cleared"), tr("Cleared disassembly equates."));
     updateDisasmView(ui->disassemblyView->getSelectedAddress().toInt(nullptr,16), true);
 }
@@ -2139,7 +2150,7 @@ void MainWindow::clearEquateFile() {
 void MainWindow::refreshEquateFile() {
     // Reset the map
     if(fileExists(currentEquateFile.toStdString())) {
-        disasm.address_map.clear();
+        disasm.addressMap.clear();
         addEquateFile(currentEquateFile);
         updateDisasmView(ui->disassemblyView->getSelectedAddress().toInt(nullptr,16), true);
     } else {
@@ -2179,19 +2190,19 @@ void MainWindow::addEquateFile(QString fileName) {
         QRegularExpression equatesRegexp("^\\h*([^\\W\\d]\\w*)\\h*(?:=|\\h\\.?equ(?!\\d))\\h*(?|\\$([\\da-f]{4,})|(\\d[\\da-f]{3,})h)\\h*(?:;.*)?$",
                                          QRegularExpression::CaseInsensitiveOption);
         // Reset the map
-        disasm.address_map.clear();
+        disasm.addressMap.clear();
         while (std::getline(in, current)) {
             QRegularExpressionMatch matches = equatesRegexp.match(QString::fromStdString(current));
             if (matches.hasMatch()) {
                 uint32_t address = static_cast<uint32_t>(matches.capturedRef(2).toUInt(nullptr, 16));
-                std::string &item = disasm.address_map[address];
+                std::string &item = disasm.addressMap[address];
                 if (item.empty()) {
                     item = matches.captured(1).toStdString();
                     uint8_t *ptr = phys_mem_ptr(address - 4, 9);
                     if (ptr && ptr[4] == 0xC3 && (ptr[0] == 0xC3 || ptr[8] == 0xC3)) { // jump table?
                         uint32_t address2  = ptr[5] | ptr[6] << 8 | ptr[7] << 16;
                         if (phys_mem_ptr(address2, 1)) {
-                            std::string &item2 = disasm.address_map[address2];
+                            std::string &item2 = disasm.addressMap[address2];
                             if (item2.empty()) {
                                 item2 = "_" + item;
                             }
