@@ -112,6 +112,7 @@ private:
     void deletePort();
     void updatePortData(int);
     void changePortData(QTableWidgetItem*);
+    void changeBreakpointAddress(QTableWidgetItem*);
     void deleteBreakpoint();
     void breakpointCheckboxToggled(QTableWidgetItem *);
     void drawNextDisassembleLine();
@@ -127,6 +128,7 @@ private:
     void disasmContextMenu(const QPoint &);
     void vatContextMenu(const QPoint &);
     void opContextMenu(const QPoint &);
+    void scrollDisasmView(int);
     bool addBreakpoint();
 
     // Others

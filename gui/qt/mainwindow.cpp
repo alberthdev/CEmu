@@ -21,6 +21,7 @@
 #include <QtWidgets/QProgressDialog>
 #include <QtWidgets/QInputDialog>
 #include <QtQuickWidgets/QQuickWidget>
+#include <QtWidgets/QScrollBar>
 #include <QtGui/QFont>
 #include <QtGui/QPixmap>
 
@@ -101,8 +102,10 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->vatView, &QWidget::customContextMenuRequested, this, &MainWindow::vatContextMenu);
     connect(ui->opView, &QWidget::customContextMenuRequested, this, &MainWindow::opContextMenu);
     connect(ui->portView, &QTableWidget::itemChanged, this, &MainWindow::changePortData);
+    connect(ui->breakpointView, &QTableWidget::itemChanged, this, &MainWindow::changeBreakpointAddress);
     connect(ui->checkCharging, &QCheckBox::toggled, this, &MainWindow::changeBatteryCharging);
     connect(ui->sliderBattery, &QSlider::valueChanged, this, &MainWindow::changeBatteryStatus);
+    connect(ui->disassemblyView->verticalScrollBar(), &QScrollBar::valueChanged, this, &MainWindow::scrollDisasmView);
 
     // Debugger Options
     connect(ui->buttonAddEquateFile, &QPushButton::clicked, this, &MainWindow::addEquateFileDialog);
@@ -1420,11 +1423,11 @@ void MainWindow::updateDisasmView(const int sentBase, const bool newPane) {
     int32_t last_address = disasm.new_address + 0x120;
     if (last_address > 0xFFFFFF) last_address = 0xFFFFFF;
 
+    ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     ui->disassemblyView->clear();
     ui->disassemblyView->clearAllHighlights();
-
     ui->disassemblyView->cursorState(false);
-
+    ui->disassemblyView->verticalScrollBar()->blockSignals(false);
     while (disasm.new_address < last_address) {
         drawNextDisassembleLine();
     }
@@ -1538,6 +1541,15 @@ void MainWindow::changePortData(QTableWidgetItem *curr_item) {
         debug_port_write_byte(port, pdata);
 
         curr_item->setText(int2hex(debug_port_read_byte(port), 2));
+    }
+}
+
+void MainWindow::changeBreakpointAddress(QTableWidgetItem *curr_item) {
+    const int currentRow = curr_item->row();
+    uint16_t port = static_cast<uint16_t>(hex2int(ui->portView->item(currentRow, 0)->text()));
+
+    if (curr_item->column() == 0) {
+
     }
 }
 
@@ -1860,6 +1872,7 @@ void MainWindow::stepInPressed() {
     }
 
     disconnect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
+    ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     debuggerOn = false;
     updateDebuggerChanges();
     emit setDebugStepInMode();
@@ -1875,6 +1888,7 @@ void MainWindow::stepOverPressed() {
         return;
     }
 
+    ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepOverShortcut, &QShortcut::activated, this, &MainWindow::stepOverPressed);
     disasm.base_address = cpu.registers.PC;
     disasm.adl = cpu.ADL;
@@ -1892,6 +1906,7 @@ void MainWindow::stepNextPressed() {
         return;
     }
 
+    ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepNextShortcut, &QShortcut::activated, this, &MainWindow::stepNextPressed);
     setDebuggerState(false);
     emit setDebugStepNextMode();
@@ -1901,6 +1916,8 @@ void MainWindow::stepOutPressed() {
     if(!inDebugger) {
         return;
     }
+
+    ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepOutShortcut, &QShortcut::activated, this, &MainWindow::stepOutPressed);
     setDebuggerState(false);
     emit setDebugStepOutMode();
@@ -2217,6 +2234,19 @@ void MainWindow::addEquateFile(QString fileName) {
         QMessageBox messageBox;
         messageBox.critical(0, tr("Error"), tr("Couldn't open this file"));
         messageBox.setFixedSize(500,200);
+    }
+}
+
+void MainWindow::scrollDisasmView(int value) {
+    if (value >= ui->disassemblyView->verticalScrollBar()->value()) {
+        if (value >= ui->disassemblyView->verticalScrollBar()->maximum()) {
+            ui->disassemblyView->verticalScrollBar()->blockSignals(true);
+            disconnect(ui->disassemblyView->verticalScrollBar(), &QScrollBar::valueChanged, this, &MainWindow::scrollDisasmView);
+            drawNextDisassembleLine();
+            ui->disassemblyView->verticalScrollBar()->setValue(ui->disassemblyView->verticalScrollBar()->maximum()-1);
+            connect(ui->disassemblyView->verticalScrollBar(), &QScrollBar::valueChanged, this, &MainWindow::scrollDisasmView);
+            ui->disassemblyView->verticalScrollBar()->blockSignals(false);
+        }
     }
 }
 
