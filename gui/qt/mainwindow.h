@@ -39,7 +39,6 @@ public slots:
 
     // Console
     void consoleStr(QString);
-    void consoleChar(const char);
 
     // Saved/Restored State
     void saved(bool);
@@ -215,6 +214,7 @@ private:
     bool stderrConsole = false;
     bool closeAfterSave = false;
     bool isResumed = false;
+    bool hexSearch = true;
 
     uint16_t prevPortAddress;
     uint32_t prevBreakpointAddress;
