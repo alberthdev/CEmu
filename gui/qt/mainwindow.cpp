@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     // Emulator -> GUI
     connect(&emu, &EmuThread::consoleStr, this, &MainWindow::consoleStr);
+    connect(&emu, &EmuThread::errConsoleStr, this, &MainWindow::errConsoleStr);
     connect(&emu, &EmuThread::restored, this, &MainWindow::restored, Qt::QueuedConnection);
     connect(&emu, &EmuThread::saved, this, &MainWindow::saved, Qt::QueuedConnection);
     connect(&emu, &EmuThread::isBusy, this, &MainWindow::isBusy, Qt::QueuedConnection);
@@ -147,7 +148,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->actionCheckForUpdates, &QAction::triggered, this, [=](){ this->checkForUpdates(true); });
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::showAbout);
     connect(ui->actionAboutQt, &QAction::triggered, qApp, &QApplication::aboutQt);
-
+    
     // Other GUI actions
     connect(ui->buttonRunSetup, &QPushButton::clicked, this, &MainWindow::runSetup);
     connect(ui->scaleSlider, &QSlider::sliderMoved, this, &MainWindow::reprintScale);
@@ -221,6 +222,10 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     debuggerOn = false;
 
     settings = new QSettings(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/CEmu/cemu_config.ini"), QSettings::IniFormat);
+
+#ifdef _WIN32
+    installToggleConsole();
+#endif
 
     changeThrottleMode(Qt::Checked);
     emu.rom = settings->value(QStringLiteral("romImage")).toString().toStdString();
@@ -482,10 +487,20 @@ void MainWindow::closeEvent(QCloseEvent *e) {
 
 void MainWindow::consoleStr(QString str) {
     if (stderrConsole) {
-        fputs(str.toStdString().c_str(), stderr);
+        fputs(str.toStdString().c_str(), stdout);
     } else {
         ui->console->moveCursor(QTextCursor::End);
         ui->console->insertPlainText(str);
+        ui->console->moveCursor(QTextCursor::End);
+    }
+}
+
+void MainWindow::errConsoleStr(QString str) {
+    if (stderrConsole) {
+        fputs(str.toStdString().c_str(), stderr);
+    } else {
+        ui->console->moveCursor(QTextCursor::End);
+        ui->console->insertPlainText("[ERROR] "+str);
         ui->console->moveCursor(QTextCursor::End);
     }
 }
@@ -711,17 +726,17 @@ void MainWindow::checkForUpdates(bool forceInfoBox) {
 }
 
 void MainWindow::showAbout() {
-    QMessageBox about_box(this);
-    about_box.setIconPixmap(QPixmap(":/icons/resources/icons/icon.png"));
-    about_box.setWindowTitle(tr("About CEmu"));
+    QMessageBox aboutBox(this);
+    aboutBox.setIconPixmap(QPixmap(":/icons/resources/icons/icon.png"));
+    aboutBox.setWindowTitle(tr("About CEmu"));
 
-    QAbstractButton* buttonUpdateCheck = about_box.addButton(tr("Check for updates"), QMessageBox::ActionRole);
+    QAbstractButton* buttonUpdateCheck = aboutBox.addButton(tr("Check for updates"), QMessageBox::ActionRole);
     connect(buttonUpdateCheck, &QAbstractButton::clicked, this, [=](){ this->checkForUpdates(true); });
 
-    QAbstractButton* okButton = about_box.addButton(QMessageBox::Ok);
+    QAbstractButton* okButton = aboutBox.addButton(QMessageBox::Ok);
     okButton->setFocus();
 
-    about_box.setText(tr("<h3>CEmu %1</h3>"
+    aboutBox.setText(tr("<h3>CEmu %1</h3>"
                          "<a href='https://github.com/CE-Programming/CEmu'>On GitHub</a><br>"
                          "<br>"
                          "Main authors:<br>"
@@ -733,14 +748,14 @@ void MainWindow::showAbout() {
                          "Lionel Debroux (<a href='https://github.com/debrouxl'>debrouxl</a>)<br>"
                          "Fabian Vogt (<a href='https://github.com/Vogtinator'>Vogtinator</a>)<br>"
                          "<br>"
-                         "Many thanks to the <a href='https://github.com/KnightOS/z80e'>z80e</a> (MIT license <a href='https://github.com/KnightOS/z80e/blob/master/LICENSE'>here</a>) and <a href='https://github.com/nspire-emus/firebird'>Firebird</a> (GPLv3 license <a href='https://github.com/nspire-emus/firebird/blob/master/LICENSE'>here</a>) projects<br>"
+                         "Many thanks to the <a href='https://github.com/KnightOS/z80e'>z80e</a> (MIT license <a href='https://github.com/KnightOS/z80e/blob/master/LICENSE'>here</a>) and <a href='https://github.com/nspire-emus/firebird'>Firebird</a> (GPLv3 license <a href='https://github.com/nspire-emus/firebird/blob/master/LICENSE'>here</a>) projects.<br>In-program icons are courtesy of the <a href='http://www.famfamfam.com/lab/icons/silk/'>Silk iconset</a>.<br>"
                          "<br>"
                          "This work is licensed under the GPLv3.<br>"
                          "To view a copy of this license, visit <a href='https://www.gnu.org/licenses/gpl-3.0.html'>https://www.gnu.org/licenses/gpl-3.0.html</a>")
                          .arg(QStringLiteral(CEMU_VERSION)));
-    about_box.setTextFormat(Qt::RichText);
-    about_box.show();
-    about_box.exec();
+    aboutBox.setTextFormat(Qt::RichText);
+    aboutBox.show();
+    aboutBox.exec();
 }
 
 void MainWindow::screenContextMenu(const QPoint &posa) {
@@ -936,10 +951,12 @@ void MainWindow::refreshVariableList() {
         ui->buttonRefreshList->setText(tr("Refresh variable list..."));
         ui->buttonReceiveFiles->setEnabled(false);
         ui->buttonRun->setEnabled(true);
+        ui->buttonSend->setEnabled(true);
         ui->actionResetCalculator->setEnabled(true);
         setReceiveState(false);
     } else {
         ui->buttonRefreshList->setText(tr("Resume emulation"));
+        ui->buttonSend->setEnabled(false);
         ui->buttonReceiveFiles->setEnabled(true);
         ui->actionResetCalculator->setEnabled(false);
         ui->buttonRun->setEnabled(false);
@@ -973,16 +990,21 @@ void MainWindow::refreshVariableList() {
 void MainWindow::saveSelected() {
     setReceiveState(true);
 
-    QStringList fileNames = showVariableFileDialog(QFileDialog::AcceptSave);
-    if (fileNames.size() == 1) {
-        QVector<calc_var_t> selectedVars;
-        for (int currentRow = 0; currentRow < ui->emuVarView->rowCount(); currentRow++) {
-            if (ui->emuVarView->item(currentRow, 0)->checkState()) {
-                selectedVars.append(vars[currentRow]);
-            }
+    QVector<calc_var_t> selectedVars;
+    for (int currentRow = 0; currentRow < ui->emuVarView->rowCount(); currentRow++) {
+        if (ui->emuVarView->item(currentRow, 0)->checkState()) {
+            selectedVars.append(vars[currentRow]);
         }
-        if (!receiveVariableLink(selectedVars.size(), selectedVars.constData(), fileNames.at(0).toUtf8())) {
-            QMessageBox::warning(this, tr("Failed Transfer"), tr("A failure occured during transfer of: ")+fileNames.at(0));
+    }
+    if (selectedVars.size() < 1)
+    {
+        QMessageBox::warning(this, tr("No transfer to do"), tr("Select at least one file to transfer"));
+    } else {
+        QStringList fileNames = showVariableFileDialog(QFileDialog::AcceptSave);
+        if (fileNames.size() == 1) {
+            if (!receiveVariableLink(selectedVars.size(), selectedVars.constData(), fileNames.at(0).toUtf8())) {
+                QMessageBox::warning(this, tr("Failed Transfer"), tr("A failure occured during transfer of: ")+fileNames.at(0));
+            }
         }
     }
 }

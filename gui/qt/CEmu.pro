@@ -19,7 +19,7 @@ TEMPLATE = app
 # Localization
 TRANSLATIONS += i18n/fr_FR.ts i18n/es_ES.ts
 
-CONFIG += c++11
+CONFIG += c++11 console
 
 # Core options
 DEFINES += DEBUG_SUPPORT
@@ -99,7 +99,7 @@ SOURCES +=  utils.cpp \
     searchwidget.cpp
 
 linux|macx|ios: SOURCES += ../../core/os/os-linux.c
-win32: SOURCES += ../../core/os/os-win32.c
+win32: SOURCES += ../../core/os/os-win32.c win32-console.cpp
 
 HEADERS  +=  utils.h \
     mainwindow.h \

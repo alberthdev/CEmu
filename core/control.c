@@ -103,6 +103,13 @@ static void control_write(const uint16_t pio, const uint8_t byte) {
                     break;
             }
             control.ports[index] = byte;
+
+            /* Appears to enter low-power mode (For now; this will be fine) */
+            if (byte == 0xD4) {
+                asic.ship_mode_enabled = true;
+                control.ports[0] |= 0x40; // Turn calc off
+                cpuEvents |= EVENT_RESET;
+            }
             break;
         case 0x0A:
             control.readBatteryStatus += (control.readBatteryStatus == 3) ? 1 : 0;

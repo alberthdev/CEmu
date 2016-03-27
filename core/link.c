@@ -175,7 +175,7 @@ bool sendVariableLink(const char *var_name) {
         memcpy(run_asm_safe, archivevar, sizeof(archivevar));
         cpu_flush(safe_ram_loc, 1);
         cpu.cycles = 0;
-        cpu.next = 2000000;
+        cpu.next = 20000000;
         cpu_execute();
     }
 
@@ -198,11 +198,7 @@ r_err:
     return false;
 }
 
-#define STRINGIFYMAGIC(x) #x
-#define STRINGIFY(x) STRINGIFYMAGIC(x)
-static char header[] = "**TI83F*\x1A\x0A\0File dumped from CEmu " STRINGIFY(CEMU_VERSION);
-#undef STRIGIFY
-#undef STRIGIFYMAGIC
+static char header[] = "**TI83F*\x1A\x0A\0File dumped from CEmu ";
 bool receiveVariableLink(int count, const calc_var_t *vars, const char *file_name) {
     FILE *file;
     calc_var_t var;

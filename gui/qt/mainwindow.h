@@ -39,6 +39,7 @@ public slots:
 
     // Console
     void consoleStr(QString);
+    void errConsoleStr(QString);
 
     // Saved/Restored State
     void saved(bool);
@@ -190,6 +191,12 @@ private:
     // Reset
     void reloadROM();
     void resetCalculator();
+    
+#ifdef _WIN32
+    // Win32 Console Toggle
+    void toggleConsole();
+    void installToggleConsole();
+#endif
 
     // Members
     QString getAddressString(bool &, QString);
