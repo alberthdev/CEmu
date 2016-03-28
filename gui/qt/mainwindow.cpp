@@ -36,6 +36,7 @@
 #include "qtframebuffer.h"
 #include "qtkeypadbridge.h"
 #include "searchwidget.h"
+#include "basiccodeviewerwindow.h"
 
 #include "utils.h"
 #include "capture/gif.h"
@@ -339,6 +340,9 @@ void MainWindow::saveToPath(QString path) {
 }
 
 bool MainWindow::restoreFromPath(QString path) {
+    if (inReceivingMode) {
+        refreshVariableList();
+    }
     if(!emu_thread->restore(path)) {
         QMessageBox::warning(this, tr("Could not restore"), tr("Try restarting"));
         return false;
@@ -466,6 +470,9 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *e) {
 void MainWindow::closeEvent(QCloseEvent *e) {
     if (inDebugger) {
         changeDebuggerState();
+    }
+    if (inReceivingMode) {
+        refreshVariableList();
     }
 
     if (!closeAfterSave && settings->value(QStringLiteral("saveOnClose")).toBool()) {
@@ -952,13 +959,11 @@ void MainWindow::refreshVariableList() {
         ui->buttonReceiveFiles->setEnabled(false);
         ui->buttonRun->setEnabled(true);
         ui->buttonSend->setEnabled(true);
-        ui->actionResetCalculator->setEnabled(true);
         setReceiveState(false);
     } else {
         ui->buttonRefreshList->setText(tr("Resume emulation"));
         ui->buttonSend->setEnabled(false);
         ui->buttonReceiveFiles->setEnabled(true);
-        ui->actionResetCalculator->setEnabled(false);
         ui->buttonRun->setEnabled(false);
         setReceiveState(true);
         QThread::msleep(200);
@@ -971,17 +976,29 @@ void MainWindow::refreshVariableList() {
                 currentRow = ui->emuVarView->rowCount();
                 ui->emuVarView->setRowCount(currentRow + 1);
 
+                QString var_value = (var.size <= 500) ? QString::fromStdString(calc_var_content_string(var))
+                                                      : tr("Double-click to view...");
+
                 QTableWidgetItem *var_name = new QTableWidgetItem(calc_var_name_to_utf8(var.name));
                 QTableWidgetItem *var_type = new QTableWidgetItem(calc_var_type_names[var.type]);
                 QTableWidgetItem *var_size = new QTableWidgetItem(QString::number(var.size));
+                QTableWidgetItem *var_preview = new QTableWidgetItem(var_value);
 
                 var_name->setCheckState(Qt::Unchecked);
 
                 ui->emuVarView->setItem(currentRow, 0, var_name);
                 ui->emuVarView->setItem(currentRow, 1, var_type);
                 ui->emuVarView->setItem(currentRow, 2, var_size);
+                ui->emuVarView->setItem(currentRow, 3, var_preview);
             }
         }
+        connect(ui->emuVarView, &QTableWidget::itemDoubleClicked, this, [this](QTableWidgetItem* item) {
+            BasicCodeViewerWindow codePopup;
+            const calc_var_t& var_tmp = vars[item->row()];
+            codePopup.setOriginalCode((var_tmp.size <= 500) ? item->text() : QString::fromStdString(calc_var_content_string(var_tmp)));
+            codePopup.setVariableName(ui->emuVarView->item(item->row(), 0)->text());
+            codePopup.exec();
+        });
     }
 
     inReceivingMode = !inReceivingMode;
@@ -1783,6 +1800,10 @@ void MainWindow::updatePortData(int currentRow) {
 }
 
 void MainWindow::reloadROM() {
+    if (inReceivingMode) {
+        refreshVariableList();
+    }
+
     if (emu.stop()) {
         emu.start();
         if(debuggerOn) {
@@ -2347,6 +2368,9 @@ void MainWindow::scrollDisasmView(int value) {
 }
 
 void MainWindow::resetCalculator() {
+    if (inReceivingMode) {
+        refreshVariableList();
+    }
     if(debuggerOn) {
         changeDebuggerState();
     }
