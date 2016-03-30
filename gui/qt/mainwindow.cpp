@@ -169,6 +169,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     connect(ui->flashBytes, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), ui->flashEdit, &QHexEdit::setBytesPerLine);
     connect(ui->ramBytes, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), ui->ramEdit, &QHexEdit::setBytesPerLine);
     connect(ui->memBytes, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), ui->memEdit, &QHexEdit::setBytesPerLine);
+    connect(ui->emuVarView, &QTableWidget::itemDoubleClicked, this, &MainWindow::variableClicked);
 
     // Hex Editor
     connect(ui->buttonFlashGoto, &QPushButton::clicked, this, &MainWindow::flashGotoPressed);
@@ -292,6 +293,8 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
 
     debugger_init();
 
+    colorback.setColor(QPalette::Base, QColor(Qt::yellow).lighter(160));
+    nocolorback.setColor(QPalette::Base, QColor(Qt::white));
     alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
     restoreGeometry(settings->value(QStringLiteral("windowGeometry")).toByteArray());
     restoreState(settings->value(QStringLiteral("windowState")).toByteArray(), WindowStateVersion);
@@ -942,6 +945,18 @@ void MainWindow::selectFiles() {
     sendFiles(fileNames);
 }
 
+void MainWindow::variableClicked(QTableWidgetItem *item) {
+    // TODO: find the correct one according to name+type (needed when the table is sortable)
+    const calc_var_t& var_tmp = vars[item->row()];
+    if (!calc_var_is_asmprog(&var_tmp) && !calc_var_is_internal(&var_tmp)) {
+        BasicCodeViewerWindow codePopup;
+        codePopup.setOriginalCode((var_tmp.size <= 500) ? ui->emuVarView->item(item->row(), 3)->text() : QString::fromStdString(calc_var_content_string(var_tmp)));
+        codePopup.setVariableName(ui->emuVarView->item(item->row(), 0)->text());
+        codePopup.show();
+        codePopup.exec();
+    }
+}
+
 void MainWindow::refreshVariableList() {
     int currentRow;
     calc_var_t var;
@@ -966,6 +981,7 @@ void MainWindow::refreshVariableList() {
         ui->buttonReceiveFiles->setEnabled(true);
         ui->buttonRun->setEnabled(false);
         setReceiveState(true);
+        ui->emuVarView->blockSignals(true);
         QThread::msleep(200);
 
         vat_search_init(&var);
@@ -976,15 +992,35 @@ void MainWindow::refreshVariableList() {
                 currentRow = ui->emuVarView->rowCount();
                 ui->emuVarView->setRowCount(currentRow + 1);
 
-                QString var_value = (var.size <= 500) ? QString::fromStdString(calc_var_content_string(var))
-                                                      : tr("Double-click to view...");
+                bool var_preview_needs_gray = false;
+                QString var_value;
+                if (calc_var_is_asmprog(&var)) {
+                    var_value = tr("Can't preview ASM");
+                    var_preview_needs_gray = true;
+                } else if (calc_var_is_internal(&var)) {
+                    var_value = tr("Can't preview internal OS variables");
+                    var_preview_needs_gray = true;
+                } else if (var.size > 500) {
+                    var_value = tr("[Double-click to view...]");
+                } else {
+                    var_value = QString::fromStdString(calc_var_content_string(var));
+                }
+
+                QString var_type_str = calc_var_type_names[var.type];
+                if (calc_var_is_asmprog(&var)) {
+                    var_type_str += " (ASM)";
+                }
 
                 QTableWidgetItem *var_name = new QTableWidgetItem(calc_var_name_to_utf8(var.name));
-                QTableWidgetItem *var_type = new QTableWidgetItem(calc_var_type_names[var.type]);
+                QTableWidgetItem *var_type = new QTableWidgetItem(var_type_str);
                 QTableWidgetItem *var_size = new QTableWidgetItem(QString::number(var.size));
                 QTableWidgetItem *var_preview = new QTableWidgetItem(var_value);
 
                 var_name->setCheckState(Qt::Unchecked);
+
+                if (var_preview_needs_gray) {
+                    var_preview->setForeground(Qt::gray);
+                }
 
                 ui->emuVarView->setItem(currentRow, 0, var_name);
                 ui->emuVarView->setItem(currentRow, 1, var_type);
@@ -992,15 +1028,9 @@ void MainWindow::refreshVariableList() {
                 ui->emuVarView->setItem(currentRow, 3, var_preview);
             }
         }
-        connect(ui->emuVarView, &QTableWidget::itemDoubleClicked, this, [this](QTableWidgetItem* item) {
-            BasicCodeViewerWindow codePopup;
-            const calc_var_t& var_tmp = vars[item->row()];
-            codePopup.setOriginalCode((var_tmp.size <= 500) ? item->text() : QString::fromStdString(calc_var_content_string(var_tmp)));
-            codePopup.setVariableName(ui->emuVarView->item(item->row(), 0)->text());
-            codePopup.exec();
-        });
     }
 
+    ui->emuVarView->blockSignals(false);
     inReceivingMode = !inReceivingMode;
 }
 
@@ -1251,10 +1281,7 @@ void MainWindow::changeDebuggerState() {
 }
 
 void MainWindow::populateDebugWindow() {
-    QPalette colorback, nocolorback;
     QString tmp;
-    colorback.setColor(QPalette::Base, QColor(Qt::yellow).lighter(160));
-    nocolorback.setColor(QPalette::Base, QColor(Qt::white));
 
     tmp = int2hex(cpu.registers.AF, 4);
     ui->afregView->setPalette(tmp == ui->afregView->text() ? nocolorback : colorback);
