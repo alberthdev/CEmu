@@ -6,6 +6,7 @@
 #include "cpu.h"
 #include "flash.h"
 #include "control.h"
+#include "debug/debug.h"
 
 /* Global MEMORY state */
 mem_state_t mem;
@@ -72,7 +73,7 @@ static uint32_t flash_address(uint32_t address, uint32_t *size) {
     return address;
 }
 
-uint8_t *phys_mem_ptr(uint32_t address, uint32_t size) {
+uint8_t *phys_mem_ptr(uint32_t address, int32_t size) {
     uint8_t **block;
     uint32_t block_size, end_addr;
     if (address < 0xD00000) {
@@ -82,6 +83,10 @@ uint8_t *phys_mem_ptr(uint32_t address, uint32_t size) {
         address -= 0xD00000;
         block = &mem.ram.block;
         block_size = ram_size;
+    }
+    if (size < 0) {
+        address += size;
+        size = -size;
     }
     end_addr = address + size;
     if (address <= end_addr && address <= block_size && end_addr <= block_size && *block) {
@@ -443,6 +448,43 @@ void mem_write_byte(uint32_t address, uint8_t value) {
         open_debugger(HIT_WRITE_BREAKPOINT, address);
     }
 #endif
+}
+
+uint8_t mem_peek_byte(uint32_t address) {
+    uint8_t *ptr, value = 0;
+    address &= 0xFFFFFF;
+    if (address < 0xE00000) {
+        if ((ptr = phys_mem_ptr(address, 1))) {
+            value = *ptr;
+        }
+    } else {
+        value = port_peek_byte(mmio_range(address)<<12 | addr_range(address));
+    }
+    return value;
+}
+uint16_t mem_peek_short(uint32_t address) {
+    return mem_peek_byte(address)
+         | mem_peek_byte(address + 1) << 8;
+}
+uint32_t mem_peek_long(uint32_t address) {
+    return mem_peek_byte(address)
+         | mem_peek_byte(address + 1) << 8
+         | mem_peek_byte(address + 2) << 16;
+}
+uint32_t mem_peek_word(uint32_t address, bool mode) {
+    return mode ? mem_peek_long(address) : mem_peek_short(address);
+}
+
+void mem_poke_byte(uint32_t address, uint8_t value) {
+    uint8_t *ptr;
+    address &= 0xFFFFFF;
+    if (address < 0xE00000) {
+        if ((ptr = phys_mem_ptr(address, 1))) {
+            *ptr = value;
+        }
+    } else {
+        port_poke_byte(mmio_range(address)<<12 | addr_range(address), value);
+    }
 }
 
 bool mem_save(emu_image *s) {

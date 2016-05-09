@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 #include "../defines.h"
-#include "../apb.h"
+#include "../port.h"
 
 extern volatile bool inDebugger;
 
@@ -55,14 +55,21 @@ typedef struct {
 typedef struct {        /* For debugging */
     int cpu_cycles;
     int cpu_next;
-    uint32_t stepOverAddress;
+    char *buffer;
+    uint32_t stepOverInstrEnd;
+    uint32_t stepOverInstrSize;
+    uint32_t stepOverExtendSize;
+    uint8_t stepOverMode;
     uint32_t stepOutSPL;
     uint16_t stepOutSPS;
+    int8_t stepOutWait;
     uint32_t runUntilAddress;
-    bool runUntilSet;
-    debug_data_t data;
-    char *buffer;
     uint32_t currentBuffPos;
+    bool runUntilSet;
+    bool stepOverFirstStep;
+    bool stepOverCall;
+    bool stepOverRequested;
+    debug_data_t data;
 } debug_state_t;
 
 /* Debugging */
@@ -71,14 +78,9 @@ extern debug_state_t debugger;
 void debugger_init(void);
 void debugger_free(void);
 
-uint8_t debug_read_byte(uint32_t address);
-uint16_t debug_read_short(uint32_t address);
-uint32_t debug_read_long(uint32_t address);
-uint32_t debug_read_word(uint32_t address, bool mode);
-void debug_write_byte(uint32_t address, uint8_t value);
-uint8_t debug_port_read_byte(uint32_t address);
-void debug_port_write_byte(uint32_t address, uint8_t value);
+uint8_t debug_peek_byte(uint32_t address);
 void open_debugger(int reason, uint32_t address);
+void debug_switch_step_mode(void);
 
 void debug_toggle_run_until(uint32_t address);
 
@@ -91,6 +93,7 @@ void debug_pmonitor_remove(uint16_t address);
 void debug_set_pc_address(uint32_t address);
 
 void debug_clear_run_until(void);
+void debug_clear_step_over(void);
 
 #ifdef __cplusplus
 }

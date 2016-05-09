@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     ui->console->setMaximumBlockCount(2000);
 
     // Register QtKeypadBridge for the virtual keyboard functionality
-    this->installEventFilter(&qt_keypad_bridge);
+    installEventFilter(&qt_keypad_bridge);
     ui->lcdWidget->installEventFilter(&qt_keypad_bridge);
     // Same for all the tabs/docks (iterate over them instead of harcoding their names)
     for (const auto& tab : ui->tabWidget->children()[0]->children()) {
@@ -83,7 +83,8 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     // Debugger
     connect(ui->buttonRun, &QPushButton::clicked, this, &MainWindow::changeDebuggerState);
     connect(this, &MainWindow::debuggerChangedState, &emu, &EmuThread::setDebugMode);
-    connect(&emu, &EmuThread::debuggerEntered, this, &MainWindow::raiseDebugger, Qt::QueuedConnection);
+    connect(&emu, &EmuThread::raiseDebugger, this, &MainWindow::raiseDebugger, Qt::QueuedConnection);
+    connect(&emu, &EmuThread::disableDebugger, this, &MainWindow::disableDebugger, Qt::QueuedConnection);
     connect(&emu, &EmuThread::sendDebugCommand, this, &MainWindow::processDebugCommand, Qt::QueuedConnection);
     connect(ui->buttonAddPort, &QPushButton::clicked, this, &MainWindow::addPort);
     connect(ui->buttonDeletePort, &QPushButton::clicked, this, &MainWindow::deletePort);
@@ -298,6 +299,13 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
     restoreGeometry(settings->value(QStringLiteral("windowGeometry")).toByteArray());
     restoreState(settings->value(QStringLiteral("windowState")).toByteArray(), WindowStateVersion);
+
+    QPixmap pix;
+
+    pix.load(":/icons/resources/icons/stop.png");
+    stopIcon.addPixmap(pix);
+    pix.load(":/icons/resources/icons/run.png");
+    runIcon.addPixmap(pix);
 }
 
 MainWindow::~MainWindow() {
@@ -1120,6 +1128,10 @@ void MainWindow::raiseDebugger() {
     connect(stepOutShortcut, &QShortcut::activated, this, &MainWindow::stepOutPressed);
 }
 
+void MainWindow::leaveDebugger() {
+    setDebuggerState(false);
+}
+
 void MainWindow::updateDebuggerChanges() {
     if (debuggerOn == true) {
         return;
@@ -1162,7 +1174,10 @@ void MainWindow::updateDebuggerChanges() {
     cpu.IEF1 = ui->checkIEF1->isChecked();
     cpu.IEF2 = ui->checkIEF2->isChecked();
 
-    cpu_flush(static_cast<uint32_t>(hex2int(ui->pcregView->text())), ui->checkADL->isChecked());
+    uint32_t uiPC = static_cast<uint32_t>(hex2int(ui->pcregView->text()));
+    if (cpu.registers.PC != uiPC) {
+        cpu_flush(uiPC, ui->checkADL->isChecked());
+    }
 
     backlight.brightness = static_cast<uint8_t>(ui->brightnessSlider->value());
 
@@ -1213,18 +1228,15 @@ void MainWindow::updateDebuggerChanges() {
 }
 
 void MainWindow::setDebuggerState(bool state) {
-    QPixmap pix;
-    QIcon icon;
-
     debuggerOn = state;
 
     if (debuggerOn) {
         ui->buttonRun->setText("Run");
-        pix.load(":/icons/resources/icons/run.png");
+        ui->buttonRun->setIcon(runIcon);
         debug_clear_run_until();
     } else {
         ui->buttonRun->setText("Stop");
-        pix.load(":/icons/resources/icons/stop.png");
+        ui->buttonRun->setIcon(stopIcon);
         ui->portChangeLabel->clear();
         ui->portTypeLabel->clear();
         ui->breakChangeLabel->clear();
@@ -1233,9 +1245,6 @@ void MainWindow::setDebuggerState(bool state) {
         ui->vatView->clear();
     }
     setReceiveState(false);
-    icon.addPixmap(pix);
-    ui->buttonRun->setIcon(icon);
-    ui->buttonRun->setIconSize(pix.size());
 
     ui->tabDebugging->setEnabled( debuggerOn );
     ui->buttonGoto->setEnabled( debuggerOn );
@@ -1258,14 +1267,6 @@ void MainWindow::setDebuggerState(bool state) {
     ui->buttonRefreshList->setEnabled( !debuggerOn );
     ui->emuVarView->setEnabled( !debuggerOn );
     ui->buttonReceiveFiles->setEnabled( !debuggerOn && inReceivingMode);
-
-    if (!debuggerOn) {
-        updateDebuggerChanges();
-        if (inReceivingMode) {
-            inReceivingMode = false;
-            refreshVariableList();
-        }
-    }
 }
 
 void MainWindow::changeDebuggerState() {
@@ -1276,6 +1277,11 @@ void MainWindow::changeDebuggerState() {
     debuggerOn = !debuggerOn;
     if (!debuggerOn) {
         setDebuggerState(false);
+        updateDebuggerChanges();
+        if (inReceivingMode) {
+            inReceivingMode = false;
+            refreshVariableList();
+        }
     }
     emit debuggerChangedState( debuggerOn );
 }
@@ -1439,7 +1445,7 @@ void MainWindow::updateTIOSView() {
         opType.clear();
         index = 0;
         for(uint32_t j = i; j < i+11; j++) {
-            gotData[index] = debug_read_byte(j);
+            gotData[index] = mem_peek_byte(j);
             calcData += int2hex(gotData[index], 2)+" ";
             index++;
         }
@@ -1465,7 +1471,7 @@ void MainWindow::updateTIOSView() {
             calcData2 += "00 ";
         }
         formattedLine = QString("<pre><b><font color='#444'>%1</font></b>  <font color='darkblue'>%2</font>  <font color='green'>%3</font>  %4<font color='gray'>%5</font><font color='green'> %6</font></pre>")
-                                        .arg(int2hex(var.dataPtr,6), int2hex(var.vatPtr,6), int2hex(var.size,4), calcData, calcData2, calc_var_type_names[var.type]);
+                                        .arg(int2hex(var.address,6), int2hex(var.vat,6), int2hex(var.size,4), calcData, calcData2, calc_var_type_names[var.type]);
         ui->vatView->appendHtml(formattedLine);
     }
     ui->vatView->moveCursor(QTextCursor::Start);
@@ -1516,7 +1522,7 @@ void MainWindow::addPort() {
 
     /* Mark the port as read active */
     port = static_cast<uint16_t>(hex2int(QString::fromStdString(s)));
-    read = static_cast<uint8_t>(debug_port_read_byte(port));
+    read = static_cast<uint8_t>(port_peek_byte(port));
 
     QString portString = int2hex(port,4);
 
@@ -1606,14 +1612,14 @@ void MainWindow::changePortValues(QTableWidgetItem *item) {
 
         debug_pmonitor_set(port, value, true);
         item->setText(portString);
-        ui->portView->item(row, 1)->setText(int2hex(debug_port_read_byte(port), 2));
+        ui->portView->item(row, 1)->setText(int2hex(port_peek_byte(port), 2));
     } else if (col == 1) {
         uint8_t pdata = static_cast<uint8_t>(hex2int(item->text()));
         uint16_t port = static_cast<uint16_t>(hex2int(ui->portView->item(row, 0)->text()));
 
-        debug_port_write_byte(port, pdata);
+        port_poke_byte(port, pdata);
 
-        item->setText(int2hex(debug_port_read_byte(port), 2));
+        item->setText(int2hex(port_peek_byte(port), 2));
     }
     ui->portView->blockSignals(false);
 }
@@ -1822,7 +1828,7 @@ void MainWindow::processDebugCommand(int reason, uint32_t input) {
 
 void MainWindow::updatePortData(int currentRow) {
     uint16_t port = static_cast<uint16_t>(hex2int(ui->portView->item(currentRow, 0)->text()));
-    uint8_t read = static_cast<uint8_t>(debug_port_read_byte(port));
+    uint8_t read = static_cast<uint8_t>(port_peek_byte(port));
 
     ui->portView->item(currentRow, 1)->setText(int2hex(read,2));
 }
@@ -1852,14 +1858,14 @@ void MainWindow::updateStackView() {
         for(int i=0; i<30; i+=3) {
             formattedLine = QString("<pre><b><font color='#444'>%1</font></b> %2</pre>")
                                     .arg(int2hex(cpu.registers.SPL+i, 6),
-                                         int2hex(debug_read_long(cpu.registers.SPL+i), 6));
+                                         int2hex(mem_peek_long(cpu.registers.SPL+i), 6));
             ui->stackView->appendHtml(formattedLine);
         }
     } else {
         for(int i=0; i<20; i+=2) {
             formattedLine = QString("<pre><b><font color='#444'>%1</font></b> %2</pre>")
                                     .arg(int2hex(cpu.registers.SPS+i, 4),
-                                         int2hex(debug_read_short(cpu.registers.SPS+i), 4));
+                                         int2hex(mem_peek_short(cpu.registers.SPS+i), 4));
             ui->stackView->appendHtml(formattedLine);
         }
     }
@@ -2002,6 +2008,7 @@ void MainWindow::stepInPressed() {
 
     disconnect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
     ui->disassemblyView->verticalScrollBar()->blockSignals(true);
+
     debuggerOn = false;
     updateDebuggerChanges();
     emit setDebugStepInMode();
@@ -2019,15 +2026,10 @@ void MainWindow::stepOverPressed() {
 
     ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepOverShortcut, &QShortcut::activated, this, &MainWindow::stepOverPressed);
-    disasm.base_address = cpu.registers.PC;
-    disasm.adl = cpu.ADL;
-    disassembleInstruction();
-    if (disasm.instruction.opcode == "call" || disasm.instruction.opcode == "rst") {
-        setDebuggerState(false);
-        emit setDebugStepOverMode();
-    } else {
-        stepInPressed();
-    }
+
+    debuggerOn = false;
+    updateDebuggerChanges();
+    emit setDebugStepOverMode();
 }
 
 void MainWindow::stepNextPressed() {
@@ -2037,7 +2039,9 @@ void MainWindow::stepNextPressed() {
 
     ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepNextShortcut, &QShortcut::activated, this, &MainWindow::stepNextPressed);
-    setDebuggerState(false);
+
+    debuggerOn = false;
+    updateDebuggerChanges();
     emit setDebugStepNextMode();
 }
 
@@ -2048,8 +2052,14 @@ void MainWindow::stepOutPressed() {
 
     ui->disassemblyView->verticalScrollBar()->blockSignals(true);
     disconnect(stepOutShortcut, &QShortcut::activated, this, &MainWindow::stepOutPressed);
-    setDebuggerState(false);
+
+    debuggerOn = false;
+    updateDebuggerChanges();
     emit setDebugStepOutMode();
+}
+
+void MainWindow::disableDebugger() {
+    setDebuggerState(false);
 }
 
 void MainWindow::setBreakpointAddress() {
@@ -2134,7 +2144,7 @@ void MainWindow::memUpdate(uint32_t addressBegin) {
     memSize = end-start;
 
     for (int32_t i=start; i<end; i++) {
-        mem_data.append(debug_read_byte(i));
+        mem_data.append(mem_peek_byte(i));
     }
 
     ui->memEdit->setData(mem_data);
@@ -2252,7 +2262,7 @@ void MainWindow::memGoto(QString address) {
     memSize = end-start;
 
     for (int i=start; i<end; i++) {
-        mem_data.append(debug_read_byte(i));
+        mem_data.append(mem_peek_byte(i));
     }
 
     ui->memEdit->setData(mem_data);
@@ -2295,7 +2305,7 @@ void MainWindow::memSyncPressed() {
     qint64 posa = ui->memEdit->cursorPosition();
 
     for (int i = 0; i<memSize; i++) {
-        debug_write_byte(i+start, ui->memEdit->dataAt(i, 1).at(0));
+        mem_poke_byte(i+start, ui->memEdit->dataAt(i, 1).at(0));
     }
 
     syncHexView(posa, ui->memEdit);

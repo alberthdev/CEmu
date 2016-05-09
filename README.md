@@ -1,4 +1,4 @@
-# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/ce-programming-cemu)
+# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/ce-programming-cemu) [![IRC badge](https://img.shields.io/badge/IRC%20channel-%23cemu--dev%20on%20EFNet-blue.svg)](http://chat.efnet.org/irc.cgi?adv=1&nick=cemu-user&chan=%23cemu-dev)
 
 CEmu is a third-party TI-84 Plus CE / TI-83 Premium CE calculator emulator, especially focused on developer features.  
 
@@ -90,4 +90,4 @@ _(Take a look at [the issues](https://github.com/CE-Programming/CEmu/issues), to
 
 ## License
 CEmu is licensed under the [GPLv3](LICENSE).  
-_Acknowledgements_: Some CEmu parts are, directly, modified, or inspired, from [z80e](https://github.com/KnightOS/z80e), [Firebird](https://github.com/nspire-emus/firebird), [QHexEdit2](https://github.com/Simsys/qhexedit2), [tivars_lib_cpp](https://github.com/adriweb/tivars_lib_cpp), and the [Silk iconset](http://www.famfamfam.com/lab/icons/silk/). The complete licensing information is available in the [LICENSE](LICENSE) file.
+_Acknowledgements_: Some CEmu parts are, directly, modified, or inspired, from [z80e](https://github.com/KnightOS/z80e), [Firebird](https://github.com/nspire-emus/firebird), [QHexEdit2](https://github.com/Simsys/qhexedit2), [libtifiles](https://github.com/debrouxl/tilibs), [tivars_lib_cpp](https://github.com/adriweb/tivars_lib_cpp), and the [Silk iconset](http://www.famfamfam.com/lab/icons/silk/). The complete licensing information is available in the [LICENSE](LICENSE) file.

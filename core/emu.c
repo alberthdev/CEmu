@@ -24,6 +24,7 @@
 #include "emu.h"
 #include "schedule.h"
 #include "asic.h"
+#include "debug/debug.h"
 #include "cert.h"
 #include "os/os.h"
 
@@ -31,6 +32,7 @@
 
 uint32_t cpuEvents;
 volatile bool exiting;
+volatile bool emulationPaused;
 
 void throttle_interval_event(int index) {
     event_repeat(index, 27000000 / 60);
@@ -173,11 +175,11 @@ bool emu_start(const char *romImage, const char *savedImage) {
                         }
 
                         /* Read whole ROM. */
-                        if (fread(asic.mem->flash.block, 1, lSize, romFile) < (size_t)lSize) {
+                        if (fread(mem.flash.block, 1, lSize, romFile) < (size_t)lSize) {
                             break;
                         }
 
-                        if (asic.mem->flash.block[0x7E] == 0xFE) {
+                        if (mem.flash.block[0x7E] == 0xFE) {
                             break;
                         }
 
@@ -185,9 +187,9 @@ bool emu_start(const char *romImage, const char *savedImage) {
                         /* device_type = (ti_device_type)(asic.mem->flash.block[0x20017]);         */
                         /* We've heard of the OS base being at 0x30000 on at least one calculator. */
                         for (offset = 0x20000U; offset < 0x40000U; offset += 0x10000U) {
-                            outer = asic.mem->flash.block;
+                            outer = mem.flash.block;
                             /* Outer 0x800(0) field. */
-                            if (cert_field_get(outer + offset, asic.mem->flash.size - offset, &field_type, &outer, &outer_field_size)) {
+                            if (cert_field_get(outer + offset, mem.flash.size - offset, &field_type, &outer, &outer_field_size)) {
                                 break;
                             }
                             if (field_type != 0x800F /*|| field_type == 0x800D || field_type == 0x800E*/) {
@@ -324,6 +326,7 @@ static void emu_reset(void) {
 }
 
 static void emu_main_loop_inner(void) {
+    if (!emulationPaused) {
         if (cpuEvents & EVENT_RESET) {
             gui_console_printf("[CEmu] Calculator reset triggered...\n");
             cpu_reset();
@@ -341,6 +344,9 @@ static void emu_main_loop_inner(void) {
         } else {
             gui_emu_sleep();
         }
+    } else {
+        gui_emu_sleep();
+    }
 }
 
 void emu_loop(bool reset) {
@@ -349,6 +355,7 @@ void emu_loop(bool reset) {
     }
 
     exiting = false;
+    emulationPaused = false;
 
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(emu_main_loop_inner, 0, 1);

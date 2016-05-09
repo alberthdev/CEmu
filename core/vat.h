@@ -9,7 +9,7 @@ extern "C" {
 #include <stdint.h>
 
 typedef enum calc_var_type {
-    CALC_VAR_TYPE_REAL,
+    CALC_VAR_TYPE_REAL = 0,
     CALC_VAR_TYPE_REAL_LIST,
     CALC_VAR_TYPE_MATRIX,
     CALC_VAR_TYPE_EQU,
@@ -80,10 +80,10 @@ const char *calc_var_name_to_utf8(uint8_t name[8]);
 const char *calc_var_name_to_ascii(uint8_t name[8]);
 
 typedef struct calc_var {
-    uint8_t *vat, type1, type2, version, namelen, name[9], *data;
+    uint32_t vat, address;
+    uint8_t type1, type2, version, namelen, name[9], *data;
     calc_var_type_t type;
     uint16_t size;
-    uint32_t dataPtr, vatPtr;
     bool archived;
 } calc_var_t;
 
