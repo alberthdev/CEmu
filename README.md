@@ -1,4 +1,4 @@
-# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/mateoconlechuga-cemu)
+# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/ce-programming-cemu)
 
 CEmu is a third-party TI-84 Plus CE / TI-83 Premium CE calculator emulator, especially focused on developer features.  
 
