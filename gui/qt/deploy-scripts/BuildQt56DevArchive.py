@@ -11,7 +11,7 @@ QTBASEDIR="C:\\"
 QT32 = "Qt\\Qt5.6.0"
 QT64 = "Qt\\Qt5.6.0x64"
 LIB_DLL_DIR = "5.6\\msvc2015"
-ARC_PREFIX = "Qt56_Beta_"
+ARC_PREFIX = "Qt560_Rel_"
 ARC_SUFFIX_DEV = "_DevDeploy"
 
 # What libraries need to be included?
@@ -22,7 +22,7 @@ QT_LIB_INCLUDE = "core gui quick widgets quickwidgets"
 
 def collect_qt_files(deploy_tool, dest, exe_file):
     os.environ.pop("VCINSTALLDIR", None)
-    if not silent_exec([deploy_tool, "--qmldir", "qml", "--dir", dest, exe_file]):
+    if not simple_exec([deploy_tool, "--qmldir", "qml", "--dir", dest, exe_file]):
         print(" ! ERROR: Failed to collect Qt dependencies!")
         print(" !        See above output for details.")
         sys.exit(1)
@@ -31,6 +31,13 @@ print("=====================================================")
 print("= Building Qt v5.6 development archive (dynamic)... =")
 print("=====================================================")
 
+# Modify PATH if needed
+entire_path = os.environ["PATH"]
+entire_path = entire_path.split(os.pathsep)
+entire_path = [p for p in entire_path if "PyQt4" not in p]
+entire_path = os.pathsep.join(entire_path)
+os.environ["PATH"] = entire_path
+
 cdir = os.getcwd()
 
 print(" * Stage 0: Removing Old Archives")
@@ -38,6 +45,7 @@ silentremove(os.path.join(cdir, ARC_PREFIX + "Win32" + ARC_SUFFIX_DEV + ".7z"))
 silentremove(os.path.join(cdir, ARC_PREFIX + "Win64" + ARC_SUFFIX_DEV + ".7z"))
 
 print(" * Stage 1: Building CEmu")
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 mkdir_p("build_32")
 
 os.chdir("build_32")
