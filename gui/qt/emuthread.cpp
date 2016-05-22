@@ -190,6 +190,18 @@ void EmuThread::doStuff() {
         open_debugger(DBG_USER, 0);
     }
 
+    if(debugger.currentBuffPos) {
+        debugger.buffer[debugger.currentBuffPos] = '\0';
+        emu_thread->consoleStr(QString(debugger.buffer));
+        debugger.currentBuffPos = 0;
+    }
+
+    if(debugger.currentErrBuffPos) {
+        debugger.errBuffer[debugger.currentErrBuffPos] = '\0';
+        emu_thread->errConsoleStr(QString(debugger.errBuffer));
+        debugger.currentErrBuffPos = 0;
+    }
+
     lastTime += std::chrono::steady_clock::now() - cur_time;
 }
 

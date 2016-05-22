@@ -45,7 +45,7 @@ enum {
 #define DBG_PORT_RANGE            0xFFFF00
 #define DBGOUT_PORT_RANGE         0xFB0000
 #define DBGERR_PORT_RANGE         0xFC0000
-#define SIZEOF_DBG_BUFFER         0x500
+#define SIZEOF_DBG_BUFFER         0x1000
 
 typedef struct {
     uint8_t *block;
@@ -56,6 +56,7 @@ typedef struct {        /* For debugging */
     int cpu_cycles;
     int cpu_next;
     char *buffer;
+    char *errBuffer;
     uint32_t stepOverInstrEnd;
     uint32_t stepOverInstrSize;
     uint32_t stepOverExtendSize;
@@ -64,12 +65,12 @@ typedef struct {        /* For debugging */
     uint16_t stepOutSPS;
     int8_t stepOutWait;
     uint32_t runUntilAddress;
-    uint32_t currentBuffPos;
     bool runUntilSet;
     bool stepOverFirstStep;
     bool stepOverCall;
-    bool stepOverRequested;
     debug_data_t data;
+    volatile uint32_t currentBuffPos;
+    volatile uint32_t currentErrBuffPos;
 } debug_state_t;
 
 /* Debugging */

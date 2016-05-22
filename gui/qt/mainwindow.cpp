@@ -316,6 +316,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p), ui(new Ui::MainWindow) {
     alwaysOnTop(settings->value(QStringLiteral("onTop"), 0).toUInt());
     restoreGeometry(settings->value(QStringLiteral("windowGeometry")).toByteArray());
     restoreState(settings->value(QStringLiteral("windowState")).toByteArray(), WindowStateVersion);
+    console_format = ui->console->currentCharFormat();
 
     QPixmap pix;
 
@@ -520,13 +521,21 @@ void MainWindow::closeEvent(QCloseEvent *e) {
     QMainWindow::closeEvent(e);
 }
 
+void MainWindow::appendToConsole(QString str, QColor color) {
+    QTextCursor cur(ui->console->document());
+    cur.movePosition(QTextCursor::End);
+    console_format.setForeground(color);
+    cur.insertText(str, console_format);
+    if (ui->checkAutoScroll->isChecked()) {
+        ui->console->setTextCursor(cur);
+    }
+}
+
 void MainWindow::consoleStr(QString str) {
     if (stderrConsole) {
         fputs(str.toStdString().c_str(), stdout);
     } else {
-        ui->console->moveCursor(QTextCursor::End);
-        ui->console->insertPlainText(str);
-        ui->console->moveCursor(QTextCursor::End);
+        appendToConsole(str);
     }
 }
 
@@ -534,9 +543,7 @@ void MainWindow::errConsoleStr(QString str) {
     if (stderrConsole) {
         fputs(str.toStdString().c_str(), stderr);
     } else {
-        ui->console->moveCursor(QTextCursor::End);
-        ui->console->insertPlainText("[ERROR] "+str);
-        ui->console->moveCursor(QTextCursor::End);
+        appendToConsole(str, Qt::red);
     }
 }
 
@@ -1229,13 +1236,6 @@ static QString int2hex(uint32_t a, uint8_t l) {
 }
 
 void MainWindow::raiseDebugger() {
-    // make sure we are set on the debug window, just in case
-    if (debuggerDock) {
-        debuggerDock->setVisible(true);
-        debuggerDock->raise();
-    }
-    ui->tabWidget->setCurrentWidget(ui->tabDebugger);
-
     populateDebugWindow();
     setDebuggerState(true);
     connect(stepInShortcut, &QShortcut::activated, this, &MainWindow::stepInPressed);
@@ -1953,12 +1953,14 @@ void MainWindow::reloadROM() {
     if (inReceivingMode) {
         refreshVariableList();
     }
+    if(debuggerOn) {
+        changeDebuggerState();
+    }
+
+    remove(emu.imagePath.c_str());
 
     if (emu.stop()) {
         emu.start();
-        if(debuggerOn) {
-            changeDebuggerState();
-        }
         qDebug("Reset Successful.");
     } else {
         qDebug("Reset Failed.");

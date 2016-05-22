@@ -14,8 +14,9 @@ void debugger_init(void) {
     debugger.stepOverInstrEnd = -1;
     debugger.data.block = (uint8_t*)calloc(0x1000000, sizeof(uint8_t));    /* Allocate Debug memory */
     debugger.data.ports = (uint8_t*)calloc(0x10000, sizeof(uint8_t));      /* Allocate Debug Port Monitor */
-    debugger.buffer = (char*)calloc(SIZEOF_DBG_BUFFER, sizeof(char));    /* Used for printing to the console */
-    debugger.currentBuffPos = 0;
+    debugger.buffer = (char*)malloc(SIZEOF_DBG_BUFFER * sizeof(char));     /* Used for printing to the console */
+    debugger.errBuffer = (char*)malloc(SIZEOF_DBG_BUFFER * sizeof(char));  /* Used for printing to the console */
+    debugger.currentBuffPos = debugger.currentErrBuffPos = 0;
 
     debugger.runUntilSet = false;
     gui_console_printf("[CEmu] Initialized Debugger...\n");
@@ -82,10 +83,6 @@ void open_debugger(int reason, uint32_t data) {
         gui_emu_sleep();
     } while(inDebugger);
 
-    if (debugger.stepOverRequested) {
-        debug_clear_step_over();
-    }
-
     cpu.next = debugger.cpu_next;
     cpu.cycles = debugger.cpu_cycles;
 
@@ -148,7 +145,6 @@ void debug_clear_step_over(void) {
         for (int i = debugger.stepOverInstrEnd - debugger.stepOverInstrSize;
                 i <= (int)(debugger.stepOverInstrEnd + debugger.stepOverExtendSize); i++) {
             debugger.data.block[i & 0xFFFFFF] &= ~DBG_STEP_OVER_BREAKPOINT;
-            debugger.data.block[i & 0xFFFF] &= ~DBG_STEP_OVER_BREAKPOINT;
         }
         //fprintf(stderr, "[debug_clear_step_over] Cleared step over at 0x%08x\n", debugger.stepOverInstrEnd);
         debugger.stepOverInstrEnd = -1;

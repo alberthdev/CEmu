@@ -795,14 +795,10 @@ static void cpu_execute_bli() {
 
 #ifdef DEBUG_SUPPORT
     if (cpuEvents & EVENT_DEBUG_STEP_OVER) {
-        uint32_t breakpooint = (r->PC + 2 + cpu.SUFFIX)&0xFFFFFF;
-        if (cpu.inBlock && !(debugger.data.block[breakpooint] & DBG_STEP_OVER_BREAKPOINT)) {
-            cpuEvents &= ~EVENT_DEBUG_STEP;
-            //fprintf(stderr,"[stepOver] set breakpoint at 0x%08X\n",breakpooint);
-            debugger.data.block[breakpooint] |= DBG_STEP_OVER_BREAKPOINT;
-        }
+        cpuEvents &= ~EVENT_DEBUG_STEP;
     }
 #endif
+
 }
 
 void cpu_init(void) {

@@ -55,8 +55,8 @@ namespace autotester
         { "cmdPixelShadow", 0xD07396 },
         { "plotSScreen",    0xD09466 },
         { "saveSScreen",    0xD0EA1F },
-        { "UserMem",        0xD1A881 },
-        { "CursorImage",    0xE30800 }
+        { "userMem",        0xD1A881 },
+        { "cursorImage",    0xE30800 }
     };
 
     void sendKey(uint16_t key);
