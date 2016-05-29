@@ -111,13 +111,15 @@ private:
     void executeDebugCommand(uint32_t, uint8_t);
     void processDebugCommand(int, uint32_t);
     void addPort();
-    void deletePort();
+    void removePort();
     void updatePortData(int);
+    void updateWatchpointData(int);
     void changePortValues(QTableWidgetItem*);
     void changeBreakpointAddress(QTableWidgetItem*);
     void setPreviousBreakpointAddress(QTableWidgetItem*);
+    void changeWatchpointAddress(QTableWidgetItem*);
+    void setPreviousWatchpointAddress(QTableWidgetItem*);
     void setPreviousPortValues(QTableWidgetItem*);
-    void deleteBreakpoint();
     void drawNextDisassembleLine();
     void stepInPressed();
     void stepOverPressed();
@@ -128,11 +130,18 @@ private:
     void updateDisasmView(const int, const bool);
     void gotoPressed();
     void setBreakpointAddress();
+    void setWatchpointAddress();
     void disasmContextMenu(const QPoint &);
     void vatContextMenu(const QPoint &);
     void opContextMenu(const QPoint &);
     void scrollDisasmView(int);
+    void removeBreakpointAddress(QString);
+    void removeWatchpointAddress(QString);
+    void updateDisassembly(int);
+    bool removeBreakpoint();
+    bool removeWatchpoint();
     bool addBreakpoint();
+    bool addWatchpoint();
 
     // Others
     void createLCD();
@@ -223,7 +232,7 @@ private:
     QTextCursor disasmOffset;
     bool disasmOffsetSet;
     bool fromPane;
-    int addressPane;
+    int32_t addressPane;
     int memSize;
 
     QDir currentDir;
@@ -236,10 +245,15 @@ private:
     bool closeAfterSave = false;
     bool isResumed = false;
     bool hexSearch = true;
+    bool canScroll = false;
 
     uint16_t prevPortAddress;
     uint32_t prevBreakpointAddress;
-    QString currBreakpointAddress, currPortAddress;
+    uint32_t prevWatchpointAddress;
+    uint32_t prevDisasmAddress;
+    uint32_t currAddress;
+    uint8_t watchpointType = 0;
+    QString currAddressString, currPortAddress, watchLength;
     QPalette colorback, nocolorback;
 
     QShortcut *stepInShortcut;
@@ -251,6 +265,9 @@ private:
     QList<calc_var_t> vars;
     QIcon runIcon, stopIcon; // help speed up stepping
     QTextCharFormat console_format;
+
+    int pc_line;
+    int curr_line;
 };
 
 // Used as global instance by EmuThread and Debugger class

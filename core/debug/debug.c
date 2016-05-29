@@ -38,8 +38,8 @@ uint8_t debug_peek_byte(uint32_t address) {
     uint8_t value = mem_peek_byte(address), debugData;
 
     if ((debugData = debugger.data.block[address])) {
-        disasmHighlight.hit_read_breakpoint |= debugData & DBG_READ_BREAKPOINT;
-        disasmHighlight.hit_write_breakpoint |= debugData & DBG_WRITE_BREAKPOINT;
+        disasmHighlight.hit_read_breakpoint |= debugData & DBG_READ_WATCHPOINT;
+        disasmHighlight.hit_write_breakpoint |= debugData & DBG_WRITE_WATCHPOINT;
         disasmHighlight.hit_exec_breakpoint |= debugData & DBG_EXEC_BREAKPOINT;
         disasmHighlight.hit_run_breakpoint |= debugData & DBG_RUN_UNTIL_BREAKPOINT;
         if (debugData & DBG_INST_START_MARKER && disasmHighlight.inst_address < 0) {
@@ -76,12 +76,13 @@ void open_debugger(int reason, uint32_t data) {
 
     debugger.cpu_cycles = cpu.cycles;
     debugger.cpu_next = cpu.next;
-    gui_debugger_raise_or_disable(inDebugger = true);
+
+    inDebugger = true;
     gui_debugger_send_command(reason, data);
 
-    do {
+    while(inDebugger) {
         gui_emu_sleep();
-    } while(inDebugger);
+    }
 
     cpu.next = debugger.cpu_next;
     cpu.cycles = debugger.cpu_cycles;
@@ -107,7 +108,7 @@ void debug_switch_step_mode(void) {
     }
 }
 
-void debug_breakpoint_set(uint32_t address, unsigned int type, bool set) {
+void debug_breakwatch(uint32_t address, unsigned int type, bool set) {
     if (set) {
         debugger.data.block[address] |= type;
     } else {
@@ -156,7 +157,7 @@ void debug_set_pc_address(uint32_t address) {
 }
 
 void debug_breakpoint_remove(uint32_t address) {
-    debug_breakpoint_set(address, ~DBG_NO_HANDLE, false);
+    debug_breakwatch(address, ~DBG_NO_HANDLE, false);
 }
 
 void debug_pmonitor_set(uint16_t address, unsigned int type, bool set) {
