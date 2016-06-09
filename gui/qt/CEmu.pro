@@ -8,6 +8,9 @@ if (0) { # GitHub release/deployment build. Has to correspond to the git tag.
     DEFINES += CEMU_VERSION=\\\"0.5dev_$$GIT_VERSION\\\"
 }
 
+# Continuous Integration (variable checked later)
+CI = $$(CI)
+
 # Code beautifying
 DISTFILES += ../../.astylerc
 
@@ -37,7 +40,10 @@ if (!win32-msvc*) {
     GLOBAL_FLAGS    += -ffunction-sections -fdata-sections -fno-strict-overflow
     QMAKE_CFLAGS    += -std=gnu11
     QMAKE_CXXFLAGS  += -fno-exceptions
-    CONFIG(release, debug|release): GLOBAL_FLAGS += -O3 -flto
+    isEmpty(CI) {
+        # Only enable opts and LTO for non-CI release builds
+        CONFIG(release, debug|release): GLOBAL_FLAGS += -O3 -flto
+    }
 } else {
     # TODO: add equivalent flags
     # Example for -Werror=shadow: /weC4456 /weC4457 /weC4458 /weC4459
