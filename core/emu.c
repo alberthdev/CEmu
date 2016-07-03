@@ -304,12 +304,11 @@ bool emu_start(const char *romImage, const char *savedImage) {
     return ret;
 }
 
-
 void emu_cleanup(void) {
     asic_free();
 }
 
-static void emu_reset(void) {
+static void EMSCRIPTEN_KEEPALIVE emu_reset(void) {
     /* Reset the scheduler */
     sched_reset();
 
@@ -365,4 +364,8 @@ void emu_loop(bool reset) {
     }
 #endif
     emu_cleanup();
+}
+
+void EMSCRIPTEN_KEEPALIVE emu_set_emulation_paused(bool paused) {
+    emulationPaused = paused;
 }
