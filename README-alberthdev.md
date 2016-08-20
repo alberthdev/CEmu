@@ -1,4 +1,4 @@
-# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/ce-programming-cemu) [![IRC badge](https://img.shields.io/badge/IRC%20channel-%23cemu--dev%20on%20EFNet-blue.svg)](http://chat.efnet.org/irc.cgi?adv=1&nick=cemu-user&chan=%23cemu-dev)
+# CEmu [![Build Status](https://travis-ci.org/CE-Programming/CEmu.svg)](https://travis-ci.org/CE-Programming/CEmu) [![Build status](https://ci.appveyor.com/api/projects/status/ou1kj8xox1vmkdi4?svg=true)](https://ci.appveyor.com/project/alberthdev/cemu) [![Build Status](https://scan.coverity.com/projects/7576/badge.svg)](https://scan.coverity.com/projects/ce-programming-cemu) [![IRC badge](https://img.shields.io/badge/IRC%20channel-%23cemu--dev%20on%20EFNet-blue.svg)](http://chat.efnet.org/irc.cgi?adv=1&nick=cemu-user&chan=%23cemu-dev)
 
 CEmu is a third-party TI-84 Plus CE / TI-83 Premium CE calculator emulator, especially focused on developer features.  
 The core is made in C and the GUI in C++ with Qt, for performance and portability reasons. CEmu works as-is on Windows, macOS, and Linux.
@@ -38,8 +38,12 @@ Minimalistic  | Bigger keypad and screen | With many debugging features
 * Misc. emulation (backlight, battery...)
 
 ## Downloads
-No stable binaries yet as the code keeps changing these days! When available, they'll be here, though: https://github.com/CE-Programming/CEmu/releases  
-Nightly win32 binaries available here (hosted by pimathbrainiac): http://pimathbrainiac.me/CEmu/  
+No stable binaries yet as the code keeps changing these days! When available, they'll be here, though: https://github.com/MateoConLechuga/CEmu/releases  
+
+Snapshot win32 binaries updated when this repository updates,
+available [here](https://oss.jfrog.org/artifactory/list/oss-snapshot-local/org/github/alberthdev/cemu/git/) (hosted by alberthdev).
+
+Nightly win32 binaries available [here](http://pimathbrainiac.me/CEmu/) (hosted by pimathbrainiac).
 _Note that Release builds have an update checking feature, which is disabled in development builds._
 
 ## How to build
