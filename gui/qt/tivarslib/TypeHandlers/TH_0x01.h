@@ -5,16 +5,16 @@
  * License: MIT
  */
 
-#ifndef TH_0x00_H
-#define TH_0x00_H
+#ifndef TH_0x01_H
+#define TH_0x01_H
 
 #include "ITIVarTypeHandler.h"
 
 namespace tivars
 {
 
-    // Type Handler for type 0x00: Real
-    class TH_0x00 : public ITIVarTypeHandler
+    // Type Handler for type 0x01: Real list
+    class TH_0x01 : public ITIVarTypeHandler
     {
     public:
 
@@ -22,7 +22,6 @@ namespace tivars
 
         static std::string makeStringFromData(const data_t& data, const options_t options = {});
 
-        static const constexpr size_t dataByteCount = 9;
     };
 }
 
