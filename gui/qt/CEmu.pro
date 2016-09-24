@@ -5,7 +5,7 @@ if (0) { # GitHub release/deployment build. Has to correspond to the git tag.
     DEFINES += CEMU_VERSION=\\\"1.0\\\"
 } else { # Development build. Used in the about screen
     GIT_VERSION = $$system(git describe --abbrev=7 --dirty --always --tags)
-    DEFINES += CEMU_VERSION=\\\"0.5dev_$$GIT_VERSION\\\"
+    DEFINES += CEMU_VERSION=\\\"0.9dev_$$GIT_VERSION\\\"
 }
 
 # Continuous Integration (variable checked later)
@@ -14,7 +14,7 @@ CI = $$(CI)
 # Code beautifying
 DISTFILES += ../../.astylerc
 
-QT += core gui quick widgets quickwidgets network
+QT += core gui widgets network
 
 TARGET = CEmu
 TEMPLATE = app
@@ -71,19 +71,22 @@ ios {
 macx: ICON = resources/icons/icon.icns
 
 SOURCES +=  utils.cpp \
-    main.cpp\
+    main.cpp \
     mainwindow.cpp \
     romselection.cpp \
     qtframebuffer.cpp \
     lcdwidget.cpp \
     emuthread.cpp \
-    qtkeypadbridge.cpp \
-    qmlbridge.cpp \
-    keymap.cpp \
     datawidget.cpp \
+    dockwidget.cpp \
     lcdpopout.cpp \
     searchwidget.cpp \
     basiccodeviewerwindow.cpp \
+    keypad/qtkeypadbridge.cpp \
+    keypad/keymap.cpp \
+    keypad/keypadwidget.cpp \
+    keypad/rectkey.cpp \
+    keypad/arrowkey.cpp \
     qhexedit/chunks.cpp \
     qhexedit/commands.cpp \
     qhexedit/qhexedit.cpp \
@@ -131,13 +134,24 @@ HEADERS  +=  utils.h \
     qtframebuffer.h \
     lcdwidget.h \
     emuthread.h \
-    qtkeypadbridge.h \
-    qmlbridge.h \
-    keymap.h \
     datawidget.h \
+    dockwidget.h \
     lcdpopout.h \
     searchwidget.h \
     basiccodeviewerwindow.h \
+    keypad/qtkeypadbridge.h \
+    keypad/keymap.h \
+    keypad/keypadwidget.h \
+    keypad/key.h \
+    keypad/keyconfig.h \
+    keypad/rectkey.h \
+    keypad/graphkey.h \
+    keypad/secondkey.h \
+    keypad/alphakey.h \
+    keypad/otherkey.h \
+    keypad/numkey.h \
+    keypad/operkey.h \
+    keypad/arrowkey.h \
     qhexedit/chunks.h \
     qhexedit/commands.h \
     qhexedit/qhexedit.h \

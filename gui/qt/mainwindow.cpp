@@ -2,16 +2,14 @@
 #include <QtCore/QRegularExpression>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtWidgets/QMessageBox>
-#include <QtWidgets/QDockWidget>
 #include <QtWidgets/QShortcut>
 #include <QtWidgets/QProgressDialog>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QComboBox>
-#include <QtQuickWidgets/QQuickWidget>
 #include <QtWidgets/QScrollBar>
 #include <QtGui/QFont>
 #include <QtGui/QPixmap>
-
+#include <QtNetwork/QNetworkReply>
 #include <fstream>
 
 #ifdef _MSC_VER
@@ -25,10 +23,9 @@
 #include "ui_mainwindow.h"
 
 #include "lcdpopout.h"
+#include "dockwidget.h"
 #include "emuthread.h"
-#include "qmlbridge.h"
 #include "qtframebuffer.h"
-#include "qtkeypadbridge.h"
 #include "searchwidget.h"
 #include "basiccodeviewerwindow.h"
 #include "cemuopts.h"
@@ -58,18 +55,18 @@ MainWindow::MainWindow(CEmuOpts cliOpts,QWidget *p) :QMainWindow(p), ui(new Ui::
     ui->console->setMaximumBlockCount(2000);
 
     // Register QtKeypadBridge for the virtual keyboard functionality
-    installEventFilter(&qt_keypad_bridge);
-    ui->lcdWidget->installEventFilter(&qt_keypad_bridge);
+    connect(&keypadBridge, &QtKeypadBridge::keyStateChanged, ui->keypadWidget, &KeypadWidget::changeKeyState);
+    installEventFilter(&keypadBridge);
+    ui->lcdWidget->installEventFilter(&keypadBridge);
     // Same for all the tabs/docks (iterate over them instead of harcoding their names)
     for (const auto& tab : ui->tabWidget->children()[0]->children()) {
-        tab->installEventFilter(&qt_keypad_bridge);
+        tab->installEventFilter(&keypadBridge);
     }
-
-    ui->keypadWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
 
     // Emulator -> GUI
     connect(&emu, &EmuThread::consoleStr, this, &MainWindow::consoleStr);
     connect(&emu, &EmuThread::errConsoleStr, this, &MainWindow::errConsoleStr);
+    connect(&emu, &EmuThread::started, this, &MainWindow::started, Qt::QueuedConnection);
     connect(&emu, &EmuThread::restored, this, &MainWindow::restored, Qt::QueuedConnection);
     connect(&emu, &EmuThread::saved, this, &MainWindow::saved, Qt::QueuedConnection);
     connect(&emu, &EmuThread::isBusy, this, &MainWindow::isBusy, Qt::QueuedConnection);
@@ -205,6 +202,18 @@ MainWindow::MainWindow(CEmuOpts cliOpts,QWidget *p) :QMainWindow(p), ui(new Ui::
     connect(ui->radioWabbitemuKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
     connect(ui->radiojsTIfiedKeys, &QRadioButton::clicked, this, &MainWindow::keymapChanged);
 
+    // Keypad Coloring
+    connect(ui->buttonTrueBlue,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonDenim,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonPink,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonPlum,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonRed,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonLightning,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonGolden,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonWhite,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonBlack,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+    connect(ui->buttonSilver,  &QPushButton::clicked, this, &MainWindow::selectKeypadColor);
+
     // Auto Updates
     connect(ui->checkUpdates, &QCheckBox::stateChanged, this, &MainWindow::autoCheckForUpdates);
 
@@ -249,7 +258,11 @@ MainWindow::MainWindow(CEmuOpts cliOpts,QWidget *p) :QMainWindow(p), ui(new Ui::
 #endif
 
     changeThrottleMode(Qt::Checked);
-    emu.rom = settings->value(QStringLiteral("romImage")).toString().toStdString();
+    if(opts.RomFile.isEmpty()) {
+        emu.rom = settings->value(QStringLiteral("romImage")).toString().toStdString();
+    } else {
+        emu.rom = opts.RomFile.toStdString();
+    }
     changeFrameskip(settings->value(QStringLiteral("frameskip"), 3).toUInt());
     changeScale(settings->value(QStringLiteral("scale"), 100).toUInt());
     toggleSkin(settings->value(QStringLiteral("skin"), 1).toBool());
@@ -346,12 +359,36 @@ MainWindow::~MainWindow() {
     settings->setValue(QStringLiteral("flashBytesPerLine"), ui->flashBytes->value());
     settings->setValue(QStringLiteral("ramBytesPerLine"), ui->ramBytes->value());
     settings->setValue(QStringLiteral("memBytesPerLine"), ui->memBytes->value());
+    settings->setValue(QStringLiteral("keypadColor"), ui->keypadWidget->getCurrColor());
 
     delete settings;
     delete ui->flashEdit;
     delete ui->ramEdit;
     delete ui->memEdit;
     delete ui;
+}
+
+void MainWindow::selectKeypadColor() {
+    QObject *senderObj = sender();
+    QString senderObjName = senderObj->objectName();
+    unsigned keypad_color;
+
+    if(senderObjName == "buttonWhite") keypad_color = KEYPAD_WHITE;
+    if(senderObjName == "buttonBlack") keypad_color = KEYPAD_BLACK;
+    if(senderObjName == "buttonGolden") keypad_color = KEYPAD_GOLDEN;
+    if(senderObjName == "buttonPlum") keypad_color = KEYPAD_PLUM;
+    if(senderObjName == "buttonPink") keypad_color = KEYPAD_PINK;
+    if(senderObjName == "buttonRed") keypad_color = KEYPAD_RED;
+    if(senderObjName == "buttonLightning") keypad_color = KEYPAD_LIGHTNING;
+    if(senderObjName == "buttonTrueBlue") keypad_color = KEYPAD_TRUE_BLUE;
+    if(senderObjName == "buttonDenim") keypad_color = KEYPAD_DENIM;
+    if(senderObjName == "buttonSilver") keypad_color = KEYPAD_SILVER;
+
+    setKeypadColor(keypad_color);
+}
+
+void MainWindow::setKeypadColor(unsigned color) {
+    ui->keypadWidget->setType(get_device_type(), color);
 }
 
 void MainWindow::changeImagePath() {
@@ -439,7 +476,13 @@ void MainWindow::exportRom() {
     }
 }
 
+void MainWindow::started(bool success) {
+    if(success) {
+        setKeypadColor(settings->value(QStringLiteral("keypadColor"), true).toUInt());
+    }
+}
 void MainWindow::restored(bool success) {
+    started(success);
     if(success) {
         showStatusMsg(tr("Emulation restored from image."));
     } else {
@@ -524,7 +567,7 @@ void MainWindow::closeEvent(QCloseEvent *e) {
     }
 
     if (!emu.stop()) {
-        qDebug("Thread Termmination Failed.");
+        qDebug("Thread Termination Failed.");
     }
 
     speedUpdateTimer.stop();
@@ -611,22 +654,18 @@ void MainWindow::setUIMode(bool docks_enabled) {
     ui->menubar->insertMenu(ui->menuAbout->menuAction(), docksMenu);
 
     //Convert the tabs into QDockWidgets
-    QDockWidget *last_dock = nullptr;
+    DockWidget *last_dock = nullptr;
     while(ui->tabWidget->count()) {
-        QDockWidget *dw = new QDockWidget(ui->tabWidget->tabText(0));
-        dw->setWindowIcon(ui->tabWidget->tabIcon(0));
-        dw->setObjectName(dw->windowTitle());
+        DockWidget *dw = new DockWidget(ui->tabWidget, this);
 
         // Fill "Docks" menu
         QAction *action = dw->toggleViewAction();
         action->setIcon(dw->windowIcon());
         docksMenu->addAction(action);
 
-        QWidget *tab = ui->tabWidget->widget(0);
-        if(tab == ui->tabDebugger)
+        QWidget *tab = dw->widget();
+        if (tab == ui->tabDebugger)
             debuggerDock = dw;
-
-        dw->setWidget(tab);
 
         addDockWidget(Qt::RightDockWidgetArea, dw);
         if(last_dock != nullptr)
@@ -905,7 +944,7 @@ void MainWindow::keymapChanged() {
 
 void MainWindow::changeKeymap(const QString & value) {
     settings->setValue(QStringLiteral("keyMap"), value);
-    qt_keypad_bridge.setKeymap(value);
+    keypadBridge.setKeymap(value);
 }
 
 void MainWindow::alwaysOnTop(int state) {
@@ -2422,9 +2461,9 @@ void MainWindow::reloadROM() {
 
     if (emu.stop()) {
         emu.start();
-        qDebug("Reload Successful.");
+        consoleStr("[CEmu] Reload Successful.\n");
     } else {
-        qDebug("Reload Failed.");
+        consoleStr("[CEmu] Reload Failed.\n");
     }
 }
 
@@ -2638,7 +2677,7 @@ void MainWindow::opContextMenu(const QPoint& posa) {
 }
 
 void MainWindow::createLCD() {
-    LCDPopout *p = new LCDPopout();
+    LCDPopout *p = new LCDPopout(&keypadBridge);
     p->show();
 }
 
@@ -3081,7 +3120,7 @@ void MainWindow::addEquateFile(QString fileName) {
 }
 
 void MainWindow::scrollDisasmView(int value) {
-    if (value >= ui->disassemblyView->verticalScrollBar()->maximum() && value > 0x100) {
+    if (value >= ui->disassemblyView->verticalScrollBar()->maximum()) {
         ui->disassemblyView->verticalScrollBar()->blockSignals(true);
         drawNextDisassembleLine();
         ui->disassemblyView->verticalScrollBar()->setValue(ui->disassemblyView->verticalScrollBar()->maximum()-1);

@@ -12,6 +12,7 @@
 #include "lcdwidget.h"
 #include "romselection.h"
 #include "emuthread.h"
+#include "keypad/qtkeypadbridge.h"
 #include "../../core/vat.h"
 #include "../../core/debug/debug.h"
 #include "../../core/debug/disasm.h"
@@ -43,6 +44,7 @@ public slots:
 
     // Saved/Restored State
     void saved(bool);
+    void started(bool);
     void restored(bool);
 
     // Other
@@ -153,6 +155,8 @@ private:
     void addEquateFile(QString);
     void clearEquateFile();
     void refreshEquateFile();
+    void selectKeypadColor();
+    void setKeypadColor(unsigned color);
 
     // Speed
     void changeEmulatedSpeed(int);
@@ -229,6 +233,7 @@ private:
     QString searchingString;
 
     Ui::MainWindow *ui = nullptr;
+    QtKeypadBridge keypadBridge{this};
     QLabel statusLabel;
     QSettings *settings = nullptr;
     QDockWidget *debuggerDock = nullptr;
