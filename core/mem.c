@@ -404,6 +404,12 @@ void mem_write_cpu(uint32_t address, uint8_t value) {
     uint32_t ramAddress, select;
     address &= 0xFFFFFF;
 
+#ifdef DEBUG_SUPPORT
+    if ((debugger.data.block[address] &= ~(DBG_INST_START_MARKER | DBG_INST_MARKER)) & DBG_WRITE_WATCHPOINT) {
+        open_debugger(HIT_WRITE_BREAKPOINT, address);
+    }
+#endif
+
     if (address == control.stackLimit) {
         control.protectionStatus |= 1;
         cpu_nmi();
@@ -469,12 +475,6 @@ void mem_write_cpu(uint32_t address, uint8_t value) {
                 break;
         }
     }
-
-#ifdef DEBUG_SUPPORT
-    if ((debugger.data.block[address] &= ~(DBG_INST_START_MARKER | DBG_INST_MARKER)) & DBG_WRITE_WATCHPOINT) {
-        open_debugger(HIT_WRITE_BREAKPOINT, address);
-    }
-#endif
 }
 
 uint8_t mem_peek_byte(uint32_t address) {

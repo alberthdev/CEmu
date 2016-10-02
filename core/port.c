@@ -26,21 +26,19 @@ uint8_t port_read_byte(uint16_t address) {
 
 static void port_write(uint16_t address, uint8_t value, bool peek) {
     uint8_t port_loc = port_range(address);
-    return port_map[port_loc].write_out(address & port_mirrors[port_loc], value, peek);
+    port_map[port_loc].write_out(address & port_mirrors[port_loc], value, peek);
 }
 void port_poke_byte(uint16_t address, uint8_t value) {
-    return port_write(address, value, true);
+    port_write(address, value, true);
 }
 void port_write_byte(uint16_t address, uint8_t value) {
 #ifdef DEBUG_SUPPORT
     if (debugger.data.ports[address] & DBG_PORT_FREEZE) {
         return;
     }
-#endif
-    return port_write(address, value, false);
-#ifdef DEBUG_SUPPORT
     if (debugger.data.ports[address] & DBG_PORT_WRITE) {
         open_debugger(HIT_PORT_WRITE_BREAKPOINT, address);
     }
 #endif
+    port_write(address, value, false);
 }
