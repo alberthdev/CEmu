@@ -43,15 +43,15 @@ void throttle_interval_event(int index) {
 }
 
 bool emu_save_rom(const char *file) {
+    bool success = false;
     FILE *savedRom = fopen(file, "wb");
-
-    gui_set_busy(true);
-
     if (!savedRom) {
         return false;
     }
 
-    bool success = (fwrite(mem.flash.block, 1, flash_size, savedRom) == flash_size);
+    gui_set_busy(true);
+
+    success = (fwrite(mem.flash.block, 1, flash_size, savedRom) == flash_size);
 
     fclose(savedRom);
 
@@ -61,10 +61,17 @@ bool emu_save_rom(const char *file) {
 }
 
 bool emu_save(const char *file) {
-    FILE *savedImage = fopen_utf8(file, "wb");
+    FILE *savedImage = NULL;
+    emu_image_t *image = NULL;
     size_t size = sizeof(emu_image_t);
-    emu_image_t* image = (emu_image_t*)malloc(size);
     bool success = false;
+
+    savedImage = fopen_utf8(file, "wb");
+    if (!savedImage) {
+        return false;
+    }
+
+    image = (emu_image_t*)malloc(size);
 
     gui_set_busy(true);
 
@@ -84,6 +91,7 @@ bool emu_save(const char *file) {
 
     free(image);
     fclose(savedImage);
+
     gui_set_busy(false);
 
     return success;
@@ -92,7 +100,7 @@ bool emu_save(const char *file) {
 bool emu_start(const char *romImage, const char *savedImage) {
     bool ret = false;
     long lSize;
-    FILE *imageFile;
+    FILE *imageFile = NULL;
 
     gui_set_busy(true);
 
@@ -140,7 +148,6 @@ bool emu_start(const char *romImage, const char *savedImage) {
                 break;
             }
             free(image);
-            fclose(imageFile);
             ret = true;
         } else {
             asic_init();
@@ -291,6 +298,10 @@ bool emu_start(const char *romImage, const char *savedImage) {
             }
         }
     } while(0);
+
+    if (imageFile) {
+        fclose(imageFile);
+    }
 
     if (!ret) {
         gui_console_printf("[CEmu] Error opening image (Corrupted certificate?)\n");
