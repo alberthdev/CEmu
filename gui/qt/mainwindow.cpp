@@ -447,7 +447,9 @@ void MainWindow::restoreFromFile() {
                                                       tr("CEmu images (*.ce);;All files (*.*)"));
     if(!savedImage.isEmpty()) {
         currentDir = QFileInfo(savedImage).absoluteDir();
-        restoreFromPath(savedImage);
+        if(restoreFromPath(savedImage)) {
+            usingLoadedImage = true;
+        }
     }
 }
 
@@ -2390,8 +2392,11 @@ void MainWindow::reloadROM() {
         changeDebuggerState();
     }
 
-    QFile(emu.imagePath.c_str()).remove();
+    if(!usingLoadedImage) {
+        QFile(emu.imagePath.c_str()).remove();
+    }
 
+    usingLoadedImage = false;
     if (emu.stop()) {
         emu.start();
         consoleStr("[CEmu] Reload Successful.\n");
