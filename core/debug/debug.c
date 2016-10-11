@@ -36,6 +36,7 @@ void debugger_free(void) {
     }
     gui_console_printf("[CEmu] Freed Debugger.\n");
 }
+
 uint8_t debug_peek_byte(uint32_t address) {
     uint8_t value = mem_peek_byte(address), debugData;
 
@@ -91,7 +92,7 @@ void open_debugger(int reason, uint32_t data) {
     gui_debugger_send_command(reason, data);
 
     while(inDebugger) {
-        gui_emu_sleep();
+        gui_emu_sleep(50);
     }
 
     cpu.next = debugger.cpu_next;
