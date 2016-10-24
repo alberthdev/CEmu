@@ -6156,9 +6156,6 @@ QPushButton:pressed {
           </widget>
          </item>
         </layout>
-        <zorder>opView</zorder>
-        <zorder>opView</zorder>
-        <zorder>opView</zorder>
        </widget>
       </item>
       <item>
@@ -7092,7 +7089,7 @@ QPushButton:pressed {
      <x>0</x>
      <y>0</y>
      <width>1053</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="sizePolicy">
