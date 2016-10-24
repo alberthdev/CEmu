@@ -371,7 +371,7 @@ def upload_snapshot(filename, cur_timestamp, snap_base_fn, bintray_api_username,
     cur_date = cur_timestamp.split("_")[0]
     cur_date_ym = cur_date[:6]
     
-    full_path = BINTRAY_SNAPSHOT_SERVER_PATH + BINTRAY_MAVEN_GROUP_PATH + "git/test/" + cur_date_ym + "/" + cur_date + "/" + snap_base_fn + "/"
+    full_path = BINTRAY_SNAPSHOT_SERVER_PATH + BINTRAY_MAVEN_GROUP_PATH + "git-test/" + cur_date_ym + "/" + cur_date + "/" + snap_base_fn + "/"
     
     base_fn = os.path.basename(filename)
     
