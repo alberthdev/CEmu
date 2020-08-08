@@ -1,0 +1,31 @@
+name: Build MSVC Windows
+
+on:
+  push:
+    branches: [ master, features/github-actions ]
+  pull_request:
+    branches: [ master, features/github-actions ]
+
+jobs:
+  build:
+
+    runs-on: windows-2019
+
+    steps:
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+    
+    - name: Checkout Git Repo
+      uses: actions/checkout@v2
+    
+    - name: configure
+      run: ./configure
+    
+    - name: make
+      run: make
+    
+    - name: make check
+      run: make check
+    
+    - name: make distcheck
+      run: make distcheck
